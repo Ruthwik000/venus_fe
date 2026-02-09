@@ -59,8 +59,8 @@ async function handleApplicaionBuilt(app: IApplication) {
     router.start();
 
     // Store router and UI elements on app for global access
-    (app as any).router = router;
-    (app as any).chiliUIElements = chiliUIElements;
+    (app as { router?: Router; chiliUIElements?: HTMLElement[] }).router = router;
+    (app as { router?: Router; chiliUIElements?: HTMLElement[] }).chiliUIElements = chiliUIElements;
 
     Logger.info("Application started with routing and Firebase auth enabled");
 }

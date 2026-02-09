@@ -7,17 +7,24 @@ import { renderLanding } from "./pages/landing";
 import { renderLogin } from "./pages/login";
 import { renderSignup } from "./pages/signup";
 
+interface AppWithUI extends IApplication {
+    chiliUIElements?: HTMLElement[];
+}
+
 export function setupRoutes(app: IApplication): Router {
     const router = new Router();
+    const appWithUI = app as AppWithUI;
 
     // Landing page route
     router.addRoute("/", (_match: RouteMatch) => {
         Logger.info("Navigated to landing page");
 
         // Hide Chili3D UI elements
-        const chiliUIElements = (app as any).chiliUIElements as HTMLElement[];
+        const chiliUIElements = appWithUI.chiliUIElements;
         if (chiliUIElements) {
-            chiliUIElements.forEach((el) => (el.style.display = "none"));
+            for (const el of chiliUIElements) {
+                el.style.display = "none";
+            }
         }
 
         renderLanding(app, router);
@@ -28,9 +35,11 @@ export function setupRoutes(app: IApplication): Router {
         Logger.info("Navigated to login page");
 
         // Hide Chili3D UI elements
-        const chiliUIElements = (app as any).chiliUIElements as HTMLElement[];
+        const chiliUIElements = appWithUI.chiliUIElements;
         if (chiliUIElements) {
-            chiliUIElements.forEach((el) => (el.style.display = "none"));
+            for (const el of chiliUIElements) {
+                el.style.display = "none";
+            }
         }
 
         renderLogin(app, router);
@@ -41,9 +50,11 @@ export function setupRoutes(app: IApplication): Router {
         Logger.info("Navigated to signup page");
 
         // Hide Chili3D UI elements
-        const chiliUIElements = (app as any).chiliUIElements as HTMLElement[];
+        const chiliUIElements = appWithUI.chiliUIElements;
         if (chiliUIElements) {
-            chiliUIElements.forEach((el) => (el.style.display = "none"));
+            for (const el of chiliUIElements) {
+                el.style.display = "none";
+            }
         }
 
         renderSignup(app, router);
@@ -59,9 +70,11 @@ export function setupRoutes(app: IApplication): Router {
         }
 
         // Hide Chili3D UI elements
-        const chiliUIElements = (app as any).chiliUIElements as HTMLElement[];
+        const chiliUIElements = appWithUI.chiliUIElements;
         if (chiliUIElements) {
-            chiliUIElements.forEach((el) => (el.style.display = "none"));
+            for (const el of chiliUIElements) {
+                el.style.display = "none";
+            }
         }
 
         renderDashboard(app, router);
@@ -84,12 +97,12 @@ export function setupRoutes(app: IApplication): Router {
         container.style.cssText = "";
 
         // Restore the original Chili3D UI elements
-        const chiliUIElements = (app as any).chiliUIElements as HTMLElement[];
+        const chiliUIElements = appWithUI.chiliUIElements;
         if (chiliUIElements && chiliUIElements.length > 0) {
-            chiliUIElements.forEach((el) => {
+            for (const el of chiliUIElements) {
                 el.style.display = "";
                 container.appendChild(el);
-            });
+            }
         }
 
         // Create a new document if needed

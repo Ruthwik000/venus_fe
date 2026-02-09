@@ -2,7 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import { button, div } from "chili-controls";
-import { type IApplication, Logger } from "chili-core";
+import { I18n, type IApplication, Logger, PubSub } from "chili-core";
 import style from "./aiChat.module.css";
 
 interface Message {
@@ -113,7 +113,7 @@ export class AIChatPanel extends HTMLElement {
                 },
                 body: JSON.stringify({ prompt: prompt }),
             });
-        } catch (_fetchError) {
+        } catch (fetchError) {
             throw new Error(
                 "Cannot connect to the API server. Make sure the backend is running on http://127.0.0.1:8000",
             );
@@ -165,7 +165,7 @@ export class AIChatPanel extends HTMLElement {
                     method: "GET",
                     mode: "cors",
                 });
-            } catch (_fetchError) {
+            } catch (fetchError) {
                 throw new Error("Cannot connect to download server");
             }
 
