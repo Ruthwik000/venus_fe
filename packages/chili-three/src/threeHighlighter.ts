@@ -199,7 +199,7 @@ export class ThreeHighlighter implements IHighlighter {
     }
 
     clear(): void {
-        this._stateMap.forEach((v, k) => {
+        this._stateMap.forEach((_v, k) => {
             this.resetState(k);
         });
         this._stateMap.clear();
@@ -208,13 +208,13 @@ export class ThreeHighlighter implements IHighlighter {
     resetState(geometry: ThreeVisualObject): void {
         if (!this._stateMap.has(geometry)) return;
         const geometryState = this._stateMap.get(geometry);
-        geometryState!.resetState();
+        geometryState?.resetState();
         this._stateMap.delete(geometry);
     }
 
     getState(shape: ThreeVisualObject, type: ShapeType, index?: number): VisualState | undefined {
         if (this._stateMap.has(shape)) {
-            return this._stateMap.get(shape)!.getState(type, index);
+            return this._stateMap.get(shape)?.getState(type, index);
         }
         return undefined;
     }

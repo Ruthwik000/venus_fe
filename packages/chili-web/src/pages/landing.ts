@@ -4,7 +4,7 @@
 import type { IApplication } from "chili-core";
 import type { IRouter } from "chili-core/src/router";
 
-export function renderLanding(app: IApplication, router: IRouter): void {
+export function renderLanding(_app: IApplication, router: IRouter): void {
     const container = document.getElementById("app") || document.body;
     container.innerHTML = "";
     container.className = "";

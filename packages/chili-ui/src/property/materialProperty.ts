@@ -59,7 +59,7 @@ export class MaterialProperty extends PropertyBase {
         );
     }
 
-    private setMaterial(e: MouseEvent, material: Material, index: number) {
+    private setMaterial(_e: MouseEvent, material: Material, index: number) {
         Transaction.execute(this.document, "change material", () => {
             this.materials.replace(index, material);
             this.objects.forEach((x) => {

@@ -22,10 +22,6 @@ export class ObjectTracking extends TrackingBase {
     private snapping?: SnapResult;
     private readonly trackings: Map<IDocument, SnapeInfo[]> = new Map();
 
-    constructor(trackingZ: boolean) {
-        super(trackingZ);
-    }
-
     override clear(): void {
         this.clearTimer();
         super.clear();
@@ -63,7 +59,7 @@ export class ObjectTracking extends TrackingBase {
             this.trackings.set(document, []);
         }
         const currentTrackings = this.trackings.get(document)!;
-        const existingTracking = currentTrackings.find((x) => x.snap.point!.isEqualTo(snap.point!));
+        const existingTracking = currentTrackings.find((x) => x.snap.point?.isEqualTo(snap.point!));
         existingTracking
             ? this.removeTrackingPoint(document, existingTracking, currentTrackings)
             : this.addTrackingPoint(snap, document, currentTrackings);

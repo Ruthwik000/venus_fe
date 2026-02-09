@@ -161,7 +161,7 @@ export abstract class GeometryNode extends VisualNode {
                 this._originFaceMesh,
                 this.faceMaterialPair.map((x) => [x.faceIndex, x.materialIndex] as [number, number]),
             );
-            if (this._mesh!.faces.groups.length === 1) {
+            if (this._mesh?.faces.groups.length === 1) {
                 this.setPrivateValue("materialId", this.materialId[this.faceMaterialPair[0].materialIndex]);
             }
         }

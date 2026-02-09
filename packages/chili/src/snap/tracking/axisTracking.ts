@@ -8,10 +8,6 @@ import { TrackingBase } from "./trackingBase";
 export class AxisTracking extends TrackingBase {
     private readonly axies: Map<IView, Axis[]> = new Map();
 
-    constructor(trackingZ: boolean) {
-        super(trackingZ);
-    }
-
     getAxes(view: IView, referencePoint: XYZ, angle: number | undefined = undefined) {
         if (!this.axies.has(view)) {
             this.axies.set(view, this.initAxes(view.workplane, referencePoint, angle));

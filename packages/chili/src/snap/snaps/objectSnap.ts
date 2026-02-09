@@ -57,7 +57,7 @@ export class ObjectSnap extends BaseSnap {
         Config.instance.removePropertyChanged(this.onSnapTypeChanged);
     }
 
-    readonly handleSnaped = (document: IDocument, snaped?: SnapResult | undefined) => {
+    readonly handleSnaped = (_document: IDocument, snaped?: SnapResult | undefined) => {
         if (snaped?.shapes.length === 0 && this._lastDetected) {
             this.displayHint(this._lastDetected[0], this._lastDetected[1]);
             this._lastDetected = undefined;
@@ -133,7 +133,7 @@ export class ObjectSnap extends BaseSnap {
     private snapeInvisible(view: IView, x: number, y: number): SnapResult | undefined {
         const { minDistance, snap } = this.getNearestInvisibleSnap(view, x, y);
         if (minDistance < Config.instance.SnapDistance) {
-            this.hilighted(view, snap!.shapes);
+            this.hilighted(view, snap?.shapes);
             return snap;
         }
         return undefined;
@@ -192,7 +192,7 @@ export class ObjectSnap extends BaseSnap {
         });
     }
 
-    private hilighted(view: IView, shapes: VisualShapeData[]) {
+    private hilighted(_view: IView, shapes: VisualShapeData[]) {
         this.highlight(shapes);
     }
 
@@ -212,7 +212,7 @@ export class ObjectSnap extends BaseSnap {
         if (shape.shape.shapeType === ShapeType.Edge) {
             const curve = (shape.shape as IEdge).curve;
             const transform = shape.transform;
-            const point = curve.project(transform.invert()!.ofPoint(this.referencePoint())).at(0);
+            const point = curve.project(transform.invert()?.ofPoint(this.referencePoint())).at(0);
             if (point === undefined) return result;
             result.push({
                 view,
