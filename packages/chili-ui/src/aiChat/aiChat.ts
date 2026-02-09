@@ -2,7 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import { button, div } from "chili-controls";
-import { type IApplication, Logger, PubSub, I18n } from "chili-core";
+import { I18n, type IApplication, Logger, PubSub } from "chili-core";
 import style from "./aiChat.module.css";
 
 interface Message {
@@ -47,11 +47,7 @@ export class AIChatPanel extends HTMLElement {
             }),
         );
 
-        const inputContainer = div(
-            { className: style.chatInput },
-            this.inputField,
-            this.sendButton,
-        );
+        const inputContainer = div({ className: style.chatInput }, this.inputField, this.sendButton);
 
         this.append(header, this.messagesContainer, inputContainer);
     }
@@ -105,20 +101,22 @@ export class AIChatPanel extends HTMLElement {
 
     private async generateModel(prompt: string) {
         let response: Response;
-        
+
         try {
             // Call the generation API
             response = await fetch("http://127.0.0.1:8000/generate", {
                 method: "POST",
                 mode: "cors",
                 headers: {
-                    "accept": "application/json",
+                    accept: "application/json",
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ prompt: prompt }),
             });
         } catch (fetchError) {
-            throw new Error("Cannot connect to the API server. Make sure the backend is running on http://127.0.0.1:8000");
+            throw new Error(
+                "Cannot connect to the API server. Make sure the backend is running on http://127.0.0.1:8000",
+            );
         }
 
         if (!response.ok) {
