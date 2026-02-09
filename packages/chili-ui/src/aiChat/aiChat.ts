@@ -151,6 +151,8 @@ export class AIChatPanel extends HTMLElement {
     }
 
     private handleWebSocketMessage(data: any) {
+        console.log("🔔 WebSocket Message Received:", data);
+        console.log("Message Type:", data.type);
         Logger.info("Received WebSocket message:", data);
 
         switch (data.type) {
@@ -175,6 +177,7 @@ export class AIChatPanel extends HTMLElement {
                 break;
 
             case 'complete':
+                console.log("🎉 COMPLETE MESSAGE RECEIVED");
                 this.handleComplete(data);
                 break;
 
@@ -183,6 +186,7 @@ export class AIChatPanel extends HTMLElement {
                 break;
 
             default:
+                console.warn("❓ Unknown message type:", data.type);
                 Logger.warn("Unknown message type:", data.type);
         }
     }
@@ -269,19 +273,72 @@ export class AIChatPanel extends HTMLElement {
         }
     }
 
-    private handleComplete(data: any) {
+    private async handleComplete(data: any) {
+        console.log("🎯 handleComplete called");
+        console.log("Complete data structure:", JSON.stringify(data, null, 2));
+        
         this.removeTypingIndicator();
         this.finalizeCurrentMessage();
 
-        Logger.info("Response complete:", data);
+        Logger.info("Response complete - Full data:", JSON.stringify(data, null, 2));
 
         // Hide intent badge after completion
         this.intentBadge.style.display = "none";
         this.currentIntent = null;
 
-        // Show download button if available
+        // Try multiple possible paths for download URL
+        let downloadUrl = null;
+        
+        console.log("Checking data.data:", data.data);
+        console.log("Checking data.data?.download_url:", data.data?.download_url);
+        console.log("Checking data.data?.files:", data.data?.files);
+        
         if (data.data && data.data.download_url) {
-            this.showDownloadButton(data.data.download_url);
+            downloadUrl = data.data.download_url;
+            console.log("✅ Found in data.data.download_url:", downloadUrl);
+        } else if (data.download_url) {
+            downloadUrl = data.download_url;
+            console.log("✅ Found in data.download_url:", downloadUrl);
+        } else if (data.data && data.data.files) {
+            // Check for files object
+            if (data.data.files.step) {
+                downloadUrl = data.data.files.step;
+                console.log("✅ Found in data.data.files.step:", downloadUrl);
+            } else if (data.data.files.stl) {
+                downloadUrl = data.data.files.stl;
+                console.log("✅ Found in data.data.files.stl:", downloadUrl);
+            }
+        } else if (data.files) {
+            // Check for files at root level
+            if (data.files.step) {
+                downloadUrl = data.files.step;
+                console.log("✅ Found in data.files.step:", downloadUrl);
+            } else if (data.files.stl) {
+                downloadUrl = data.files.stl;
+                console.log("✅ Found in data.files.stl:", downloadUrl);
+            }
+        }
+
+        // Auto-download and import model if available
+        if (downloadUrl) {
+            console.log("🚀 Attempting to download and import from:", downloadUrl);
+            Logger.info("Found download URL:", downloadUrl);
+            const fullUrl = downloadUrl.startsWith('http') 
+                ? downloadUrl 
+                : `http://localhost:8000${downloadUrl}`;
+            console.log("Full URL:", fullUrl);
+            Logger.info("Full URL:", fullUrl);
+            
+            try {
+                await this.downloadAndImportFromUrl(fullUrl);
+                console.log("✅ Download and import completed successfully");
+            } catch (error) {
+                console.error("❌ Error during download/import:", error);
+            }
+        } else {
+            console.error("❌ NO DOWNLOAD URL FOUND!");
+            console.log("Complete data was:", data);
+            Logger.warn("No download URL found in complete message");
         }
 
         // Re-enable processing
@@ -313,21 +370,6 @@ export class AIChatPanel extends HTMLElement {
         }
         this.currentMessageElement = null;
         this.currentMessage = null;
-    }
-
-    private showDownloadButton(downloadUrl: string) {
-        const downloadBtn = document.createElement("a");
-        downloadBtn.href = `http://localhost:8000${downloadUrl}`;
-        downloadBtn.className = style.downloadButton;
-        downloadBtn.innerHTML = "⬇️ Download CAD Model (.STEP)";
-        downloadBtn.target = "_blank";
-        downloadBtn.onclick = async (e) => {
-            e.preventDefault();
-            await this.downloadAndImportFromUrl(downloadBtn.href);
-        };
-
-        this.messagesContainer.appendChild(downloadBtn);
-        this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
 
     private render() {
@@ -558,6 +600,7 @@ export class AIChatPanel extends HTMLElement {
 
     private async downloadAndImportFromUrl(fileUrl: string) {
         try {
+            console.log("📥 downloadAndImportFromUrl called with:", fileUrl);
             Logger.info("Starting download from URL:", fileUrl);
             
             this.addMessage({
@@ -567,27 +610,34 @@ export class AIChatPanel extends HTMLElement {
 
             let response: Response;
             try {
+                console.log("Fetching from URL...");
                 response = await fetch(fileUrl, {
                     method: "GET",
                     mode: "cors",
                 });
+                console.log("Fetch response:", response.status, response.statusText);
                 Logger.info("Fetch response status:", response.status, response.statusText);
             } catch (fetchError) {
+                console.error("❌ Fetch error:", fetchError);
                 Logger.error("Fetch error:", fetchError);
                 throw new Error("Cannot connect to download server");
             }
 
             if (!response.ok) {
+                console.error("❌ Response not OK:", response.status);
                 throw new Error(`Failed to download file (${response.status}): ${response.statusText}`);
             }
 
+            console.log("Converting to blob...");
             const blob = await response.blob();
+            console.log("Blob size:", blob.size, "bytes");
             
             // Determine file type and name from URL
             const fileExtension = fileUrl.split('.').pop()?.toLowerCase() || 'step';
             const fileName = `generated_model.${fileExtension}`;
             const mimeType = fileExtension === 'stl' ? 'model/stl' : 'application/step';
             
+            console.log("Creating File object:", fileName, mimeType);
             const file = new File([blob], fileName, { type: mimeType });
 
             this.removeLastMessage();
@@ -596,9 +646,13 @@ export class AIChatPanel extends HTMLElement {
                 content: "Importing model into the scene...",
             });
 
+            console.log("Getting or creating document...");
             // Import the file into the application
             const document = this.app.activeView?.document ?? (await this.app.newDocument("Untitled"));
+            console.log("Document ready, importing file...");
+            
             await this.app.dataExchange.import(document, [file]);
+            console.log("✅ Import successful!");
 
             this.removeLastMessage();
             this.addMessage({
@@ -608,11 +662,13 @@ export class AIChatPanel extends HTMLElement {
 
             // Fit the view to the new content
             if (this.app.activeView?.cameraController) {
+                console.log("Fitting camera to content...");
                 setTimeout(() => {
                     this.app.activeView?.cameraController.fitContent();
                 }, 100);
             }
         } catch (error) {
+            console.error("❌ Error in downloadAndImportFromUrl:", error);
             Logger.error("Error importing file:", error);
             this.removeLastMessage();
             this.addMessage({
