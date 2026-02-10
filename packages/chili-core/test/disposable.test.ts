@@ -47,7 +47,7 @@ describe("isDisposable", () => {
 
     test("should return false for object with dispose method that has parameters", () => {
         const obj = {
-            dispose(_arg: string) {},
+            dispose(arg: string) {},
         };
         expect(isDisposable(obj)).toBe(false);
     });

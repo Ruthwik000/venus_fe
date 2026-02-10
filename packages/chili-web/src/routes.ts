@@ -9,13 +9,8 @@ import { renderSignup } from "./pages/signup";
 import { renderTestEmail } from "./pages/test-email";
 import { renderVerifyEmail } from "./pages/verify-email";
 
-interface AppWithUI extends IApplication {
-    chiliUIElements?: HTMLElement[];
-}
-
 export function setupRoutes(app: IApplication): Router {
     const router = new Router();
-    const appWithUI = app as AppWithUI;
 
     // Landing page route
     router.addRoute("/", (_match: RouteMatch) => {

@@ -68,16 +68,16 @@ export class Arc extends CreateCommand {
         points: ShapeMeshData[],
     ): ShapeMeshData[] {
         point = point ?? p1;
-        this._planeAngle?.movePoint(point);
+        this._planeAngle!.movePoint(point);
         const result = [...points];
-        if (Math.abs(this._planeAngle?.angle) > Precision.Angle) {
+        if (Math.abs(this._planeAngle!.angle) > Precision.Angle) {
             result.push(
                 this.meshCreatedShape(
                     "arc",
-                    this._planeAngle?.plane.normal,
+                    this._planeAngle!.plane.normal,
                     center,
                     p1,
-                    this._planeAngle?.angle,
+                    this._planeAngle!.angle,
                 ),
             );
         }
@@ -93,7 +93,7 @@ export class Arc extends CreateCommand {
         const [p0, p1] = [this.stepDatas[0].point!, this.stepDatas[1].point!];
         const plane = this.stepDatas[1].plane ?? this.findPlane(this.stepDatas[1].view, p0, p1);
         this._planeAngle?.movePoint(this.stepDatas[2].point!);
-        return new ArcNode(this.document, plane.normal, p0, p1, this._planeAngle?.angle);
+        return new ArcNode(this.document, plane.normal, p0, p1, this._planeAngle!.angle);
     }
 
     private readonly circlePreview = (end: XYZ | undefined) => {

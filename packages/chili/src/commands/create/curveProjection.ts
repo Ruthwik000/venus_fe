@@ -29,7 +29,7 @@ export class CurveProjectionCommand extends CreateCommand {
         const nums = this.dir
             .split(",")
             .map(Number)
-            .filter((n) => !Number.isNaN(n));
+            .filter((n) => !isNaN(n));
         if (nums.length !== 3) {
             alert(I18n.translate("error.input.threeNumberCanBeInput"));
 

@@ -48,7 +48,7 @@ export class AngleSnapEventHandler extends SnapEventHandler<PointSnapData> {
 
     protected override inputError(text: string) {
         const angle = Number.parseFloat(text);
-        return Number.isNaN(angle) ? "error.input.invalidNumber" : undefined;
+        return isNaN(angle) ? "error.input.invalidNumber" : undefined;
     }
 
     protected override getPointFromInput(view: IView, text: string): SnapResult {

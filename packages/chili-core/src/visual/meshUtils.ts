@@ -165,7 +165,7 @@ export class MeshUtils {
         const grouped = Object.groupBy(materialMap, (x) => x[1]);
 
         for (const key of Object.keys(grouped)) {
-            const i = parseInt(key, 10);
+            const i = parseInt(key);
             const groupStart = offset.faceIndex;
             MeshUtils.mergeSameGroup(grouped[i]!, mesh, result, offset);
             result.groups.push({

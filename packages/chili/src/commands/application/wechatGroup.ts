@@ -10,7 +10,7 @@ import { command, type IApplication, type ICommand, PubSub } from "chili-core";
     isApplicationCommand: true,
 })
 export class WeChatGroup implements ICommand {
-    async execute(_app: IApplication): Promise<void> {
+    async execute(app: IApplication): Promise<void> {
         PubSub.default.pub("showDialog", "command.wechat.group", this.ui());
     }
 

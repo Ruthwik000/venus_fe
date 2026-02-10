@@ -11,13 +11,13 @@ export class Navigation3D {
     static getKey(event: MouseEvent) {
         let key = "Middle";
         if (event.shiftKey) {
-            key = `Shift+${key}`;
+            key = "Shift+" + key;
         }
         if (event.ctrlKey) {
-            key = `Ctrl+${key}`;
+            key = "Ctrl+" + key;
         }
         if (event.altKey) {
-            key = `Alt+${key}`;
+            key = "Alt+" + key;
         }
         return key;
     }
@@ -27,23 +27,23 @@ export class Navigation3D {
         rotate: string;
     } {
         const functionKey = {
-            Chili3d: {
+            ["Chili3d"]: {
                 pan: "Middle",
                 rotate: "Shift+Middle",
             },
-            Revit: {
+            ["Revit"]: {
                 pan: "Middle",
                 rotate: "Shift+Middle",
             },
-            Blender: {
+            ["Blender"]: {
                 pan: "Shift+Middle",
                 rotate: "Middle",
             },
-            Creo: {
+            ["Creo"]: {
                 pan: "Shift+Middle",
                 rotate: "Middle",
             },
-            Solidworks: {
+            ["Solidworks"]: {
                 pan: "Ctrl+Middle",
                 rotate: "Middle",
             },

@@ -107,8 +107,8 @@ export class Pipe extends MultistepCommand {
 
     private readonly preview = (point: XYZ | undefined): ShapeMeshData[] => {
         const ps = this.stepDatas.map((data) => this.meshPoint(data.point!));
-        const _edges = new EdgeMeshDataBuilder();
-        this.stepDatas.forEach((_data, index) => {
+        const edges = new EdgeMeshDataBuilder();
+        this.stepDatas.forEach((data, index) => {
             if (index < this.stepDatas.length - 1) {
                 // edges.addPosition ... but we need lines between them
             }
@@ -121,7 +121,7 @@ export class Pipe extends MultistepCommand {
         }
 
         if (point && this.stepDatas.length > 0) {
-            lines.push(this.meshLine(this.stepDatas.at(-1)?.point!, point));
+            lines.push(this.meshLine(this.stepDatas.at(-1)!.point!, point));
         }
 
         return [...ps, ...lines]; // spread

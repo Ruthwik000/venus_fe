@@ -36,7 +36,7 @@ export abstract class SelectionHandler implements IEventHandler {
         readonly multiMode: boolean,
         readonly controller?: AsyncController,
     ) {
-        controller?.onCancelled((_s) => {
+        controller?.onCancelled((s) => {
             this.clearSelected(document);
             this.cleanHighlights();
         });
@@ -72,7 +72,7 @@ export abstract class SelectionHandler implements IEventHandler {
 
     protected abstract highlightNext(view: IView): void;
 
-    pointerDown(_view: IView, event: PointerEvent): void {
+    pointerDown(view: IView, event: PointerEvent): void {
         event.preventDefault();
         if (event.button === 0 && event.isPrimary) {
             this.mouse = { isDown: true, x: event.offsetX, y: event.offsetY };
@@ -125,7 +125,7 @@ export abstract class SelectionHandler implements IEventHandler {
         this.pointerEventMap.delete(event.pointerId);
     }
 
-    private removeRect(_view: IView) {
+    private removeRect(view: IView) {
         this.rect?.element.remove();
         this.rect = undefined;
     }

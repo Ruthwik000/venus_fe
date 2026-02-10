@@ -140,12 +140,12 @@ describe("Component", () => {
 
         const boundingBox = component.boundingBox;
         expect(boundingBox).toBeDefined();
-        expect(boundingBox?.min.x).toBe(0);
-        expect(boundingBox?.min.y).toBe(0);
-        expect(boundingBox?.min.z).toBe(0);
-        expect(boundingBox?.max.x).toBe(2);
-        expect(boundingBox?.max.y).toBe(2);
-        expect(boundingBox?.max.z).toBe(2);
+        expect(boundingBox!.min.x).toBe(0);
+        expect(boundingBox!.min.y).toBe(0);
+        expect(boundingBox!.min.z).toBe(0);
+        expect(boundingBox!.max.x).toBe(2);
+        expect(boundingBox!.max.y).toBe(2);
+        expect(boundingBox!.max.z).toBe(2);
     });
 
     test("boundingBox should return undefined for empty nodes", () => {
@@ -209,7 +209,7 @@ describe("Component", () => {
         const component = new Component("Test", [meshNode]);
         const size = createComponentSize();
 
-        component.getSize([meshNode], size);
+        component["getSize"]([meshNode], size);
 
         expect(size.meshPosition).toBe(3);
         expect(size.meshIndex).toBe(6);
@@ -272,7 +272,7 @@ describe("ComponentNode", () => {
 
         const boundingBox = node.boundingBox();
         expect(boundingBox).toBeDefined();
-        expect(boundingBox?.min.x).toBe(1);
+        expect(boundingBox!.min.x).toBe(1);
     });
 
     test("boundingBox should return undefined when component has no bounding box", () => {
@@ -316,7 +316,7 @@ describe("ComponentNode", () => {
 
         const boundingBox = node.boundingBox();
         expect(boundingBox).toBeDefined();
-        expect(boundingBox?.min.x).toBe(1);
+        expect(boundingBox!.min.x).toBe(1);
     });
 
     test("boundingBox should return undefined when component has no bounding box", () => {

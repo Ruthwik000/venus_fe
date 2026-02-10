@@ -73,12 +73,12 @@ export class PointSnapEventHandler extends SnapEventHandler<PointSnapData> {
     }
 
     private calculatePointFromDistance(refPoint: XYZ, distance: number): XYZ {
-        const vector = this._snaped?.point?.sub(refPoint).normalize()!;
+        const vector = this._snaped!.point!.sub(refPoint).normalize()!;
         return refPoint.add(vector.multiply(distance));
     }
 
     private calculatePointFromCoordinates(refPoint: XYZ, dims: number[]): XYZ {
-        const plane = this.data.plane?.() ?? this.snaped?.view.workplane;
+        const plane = this.data.plane?.() ?? this.snaped!.view.workplane;
         let point = refPoint.add(plane.xvec.multiply(dims[0])).add(plane.yvec.multiply(dims[1]));
         if (dims.length === 3) {
             point = point.add(plane.normal.multiply(dims[2]));
@@ -114,7 +114,7 @@ export class PointSnapEventHandler extends SnapEventHandler<PointSnapData> {
 
     private isInvalidSingleNumber(dims: number[]): boolean {
         const refPoint = this.getRefPoint();
-        return dims.length === 1 && refPoint! && (!this._snaped || this._snaped.point?.isEqualTo(refPoint));
+        return dims.length === 1 && refPoint! && (!this._snaped || this._snaped.point!.isEqualTo(refPoint));
     }
 
     private getRefPoint(): XYZ | undefined {
@@ -170,7 +170,7 @@ export class SnapPointPlaneEventHandler extends PointSnapEventHandler {
         super.findSnapPoint(shapeType, view, event);
 
         if (this._snaped?.point) {
-            this._snaped.point = this.data.plane?.().project(this._snaped.point);
+            this._snaped.point = this.data.plane!().project(this._snaped.point);
         }
     }
 }

@@ -46,7 +46,7 @@ export class PropertyUtils {
     private static getAllKeysOfPrototypeChain(target: any, properties: Property[], until?: object) {
         if (!target || target === until) return;
         if (PropertyKeyMap.has(target)) {
-            properties.splice(0, 0, ...PropertyKeyMap.get(target)?.values());
+            properties.splice(0, 0, ...PropertyKeyMap.get(target)!.values());
         }
         PropertyUtils.getAllKeysOfPrototypeChain(Object.getPrototypeOf(target), properties, until);
     }

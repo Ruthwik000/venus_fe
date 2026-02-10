@@ -308,7 +308,7 @@ export class ThreeView extends Observable implements IView {
             origin.set(x, y, z).unproject(this.camera);
             direction.set(0, 0, -1).transformDirection(this.camera.matrixWorld);
         } else {
-            console.error(`Unsupported camera type: ${this.camera}`);
+            console.error("Unsupported camera type: " + this.camera);
         }
 
         return new Ray(ThreeHelper.toXYZ(origin), ThreeHelper.toXYZ(direction));
@@ -436,7 +436,7 @@ export class ThreeView extends Observable implements IView {
         const addShape = (indexes: number[]) => {
             detecteds.push({
                 shape,
-                transform: ThreeHelper.toMatrix(obj.parent?.matrixWorld),
+                transform: ThreeHelper.toMatrix(obj.parent!.matrixWorld),
                 owner: obj.parent as any,
                 indexes,
             });

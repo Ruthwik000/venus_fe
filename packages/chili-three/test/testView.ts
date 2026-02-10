@@ -10,8 +10,8 @@ import type { ThreeVisualContext } from "../src/threeVisualContext";
 class TestWebGLRenderer {
     constructor(readonly domElement = document.createElement("canvas")) {}
 
-    render(_scene: THREE.Object3D, _camera: THREE.Camera): void {}
-    setSize(_width: number, _height: number, _updateStyle?: boolean): void {}
+    render(scene: THREE.Object3D, camera: THREE.Camera): void {}
+    setSize(width: number, height: number, updateStyle?: boolean): void {}
 
     getPixelRatio() {
         return 1;
@@ -20,15 +20,15 @@ class TestWebGLRenderer {
     getViewport() {
         return new THREE.Vector4();
     }
-    setViewport(_v: THREE.Vector4) {}
+    setViewport(v: THREE.Vector4) {}
 
-    setPixelRatio(_value: number) {}
+    setPixelRatio(value: number) {}
 
-    getSize(_target: THREE.Vector2): THREE.Vector2 {
+    getSize(target: THREE.Vector2): THREE.Vector2 {
         return new THREE.Vector2();
     }
 
-    setAnimationLoop(_fn: (x: number) => void) {}
+    setAnimationLoop(fn: (x: number) => void) {}
     getRenderTarget() {
         return null;
     }
@@ -39,7 +39,7 @@ class TestWebGLRenderer {
     getClearAlpha() {}
     getContext() {
         return {
-            getExtension(_str: string) {},
+            getExtension(str: string) {},
         };
     }
 }

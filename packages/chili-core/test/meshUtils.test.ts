@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { Matrix4 } from "../src/math";
+import { Matrix4, XYZ } from "../src/math";
 import { type EdgeMeshData, type FaceMeshData, Mesh } from "../src/shape";
 import { MeshUtils } from "../src/visual/meshUtils";
 
@@ -294,9 +294,9 @@ describe("MeshUtils", () => {
             const result = MeshUtils.subFace(mesh, 0);
 
             expect(result).toBeDefined();
-            expect(result?.position).toEqual(mesh.position);
-            expect(result?.index).toEqual(new Uint32Array([0, 1, 2]));
-            expect(result?.range).toEqual([]);
+            expect(result!.position).toEqual(mesh.position);
+            expect(result!.index).toEqual(new Uint32Array([0, 1, 2]));
+            expect(result!.range).toEqual([]);
         });
     });
 
@@ -343,8 +343,8 @@ describe("MeshUtils", () => {
 
             expect(pointsMap.size).toBe(1);
             expect(pointsMap.has("0_1")).toBe(true);
-            expect(pointsMap.get("0_1")?.count).toBe(1);
-            expect(pointsMap.get("0_1")?.points).toEqual([0, 0, 0, 1, 0, 0]);
+            expect(pointsMap.get("0_1")!.count).toBe(1);
+            expect(pointsMap.get("0_1")!.points).toEqual([0, 0, 0, 1, 0, 0]);
         });
 
         test("should increment count for existing edge", () => {
@@ -355,7 +355,7 @@ describe("MeshUtils", () => {
             MeshUtils.addEdge(pointsMap, face, 1, 0);
 
             expect(pointsMap.size).toBe(1);
-            expect(pointsMap.get("0_1")?.count).toBe(2);
+            expect(pointsMap.get("0_1")!.count).toBe(2);
         });
 
         test("should handle reversed indices correctly", () => {
@@ -418,7 +418,7 @@ describe("MeshUtils", () => {
             const result = MeshUtils.subEdge(mesh, 0);
 
             expect(result).toBeDefined();
-            expect(result?.length).toBe(12); // 4 points * 3 coordinates
+            expect(result!.length).toBe(12); // 4 points * 3 coordinates
             expect(Array.from(result!)).toEqual([0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0]);
         });
     });

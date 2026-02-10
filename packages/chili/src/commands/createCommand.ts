@@ -4,7 +4,7 @@
 import { type GeometryNode, property, Transaction } from "chili-core";
 import { MultistepCommand } from "./multistepCommand";
 
-const _count = 1;
+const count = 1;
 
 export abstract class CreateCommand extends MultistepCommand {
     protected override executeMainTask() {

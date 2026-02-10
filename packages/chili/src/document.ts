@@ -132,13 +132,13 @@ export class Document extends Observable implements IDocument {
             );
             return undefined;
         }
-        const document = new Document(app, data.properties.name, data.properties.id);
+        const document = new Document(app, data.properties["name"], data.properties["id"]);
         document.history.disabled = true;
         document.acts.push(
-            ...data.properties.acts.map((x: Serialized) => Serializer.deserializeObject(document, x)),
+            ...data.properties["acts"].map((x: Serialized) => Serializer.deserializeObject(document, x)),
         );
 
-        await document.modelManager.deserialize(data.properties.models);
+        await document.modelManager.deserialize(data.properties["models"]);
         document.history.disabled = false;
         return document;
     }

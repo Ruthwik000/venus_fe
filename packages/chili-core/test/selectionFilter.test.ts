@@ -23,8 +23,8 @@ describe("ShapeNodeFilter", () => {
             isEqual: (other: IShape) => other === mockShape,
             mesh: { edges: undefined, faces: undefined },
             matrix: { multiply: (m: any) => m },
-            transformed: (_m: any) => mockShape,
-            transformedMul: (_m: any) => mockShape,
+            transformed: (m: any) => mockShape,
+            transformedMul: (m: any) => mockShape,
             edgesMeshPosition: () => ({
                 lineType: "solid",
                 position: new Float32Array(),

@@ -61,7 +61,7 @@ export abstract class TransformedCommand extends MultistepCommand {
     protected override async canExcute(): Promise<boolean> {
         if (!(await this.ensureSelectedModels())) return false;
 
-        this.positions = this.models?.flatMap((model) => {
+        this.positions = this.models!.flatMap((model) => {
             if (model instanceof MeshNode) {
                 return model.mesh.position ? model.transform.ofPoints(model.mesh.position) : [];
             } else if (model instanceof GeometryNode) {
@@ -80,7 +80,7 @@ export abstract class TransformedCommand extends MultistepCommand {
 
     protected executeMainTask(): void {
         Transaction.execute(this.document, `excute ${Object.getPrototypeOf(this).data.name}`, () => {
-            const transform = this.transfrom(this.stepDatas.at(-1)?.point!);
+            const transform = this.transfrom(this.stepDatas.at(-1)!.point!);
 
             if (this.isClone) {
                 this.models?.forEach((x) => {

@@ -78,7 +78,7 @@ export class SelectMeasure extends CancelableCommand {
             container: div({
                 className: style.selectSum,
             }),
-            header: h1({ textContent: new Localize(this.#category?.selectedItem!) }),
+            header: h1({ textContent: new Localize(this.#category!.selectedItem!) }),
             list: ul(),
             value: span({
                 textContent: "0.00",
@@ -97,8 +97,8 @@ export class SelectMeasure extends CancelableCommand {
 
         const li = document.createElement("li");
         li.textContent = item.toFixed(2);
-        this.#sumUI?.list.append(li);
-        this.#sumUI?.value.textContent = this.#sum.toFixed(2);
+        this.#sumUI!.list.append(li);
+        this.#sumUI!.value.textContent = this.#sum.toFixed(2);
     }
 
     protected override afterExecute(): void {
@@ -161,7 +161,7 @@ export class SelectMeasure extends CancelableCommand {
 
         const id = this.document.visual.context.displayMesh([mesh]);
         this.#disposeSet.add(
-            this.application.activeView?.htmlText(length.toFixed(2), start.add(end).multiply(0.5), {
+            this.application.activeView!.htmlText(length.toFixed(2), start.add(end).multiply(0.5), {
                 hideDelete: true,
                 onDispose: () => {
                     this.document.visual.context.removeMesh(id);
@@ -183,7 +183,7 @@ export class SelectMeasure extends CancelableCommand {
         const center = this.wireCenter(mesh.position);
         const id = this.document.visual.context.displayMesh([mesh]);
         this.#disposeSet.add(
-            this.application.activeView?.htmlText(area.toFixed(2), center, {
+            this.application.activeView!.htmlText(area.toFixed(2), center, {
                 hideDelete: true,
                 onDispose: () => {
                     this.document.visual.context.removeMesh(id);
@@ -217,7 +217,7 @@ export class SelectMeasure extends CancelableCommand {
         this.addSumItem(volume);
         const id = this.document.visual.context.displayMesh([mesh]);
         this.#disposeSet.add(
-            this.application.activeView?.htmlText(volume.toFixed(2), transform.ofPoint(center), {
+            this.application.activeView!.htmlText(volume.toFixed(2), transform.ofPoint(center), {
                 hideDelete: true,
                 onDispose: () => {
                     this.document.visual.context.removeMesh(id);

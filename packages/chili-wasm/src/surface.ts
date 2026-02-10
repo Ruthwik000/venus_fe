@@ -82,7 +82,7 @@ export class OccSurface extends OccGeometry implements ISurface {
         else if (isType("Geom_ToroidalSurface")) return new OccToroidalSurface(actualSurface);
         else if (isType("ShapeExtent_CompositeSurface")) return new OccCompositeSurface(actualSurface);
 
-        throw new Error(`Unknown surface type: ${String(surface)}`);
+        throw new Error("Unknown surface type: " + String(surface));
     }
 
     override copy(): IGeometry {
@@ -348,7 +348,7 @@ export class OccSweptSurface extends OccSurface implements ISweptSurface {
         });
     }
     basisCurve(): ICurve {
-        return gc((_c) => {
+        return gc((c) => {
             const handleCurve = this.sweptSurface.basisCurve();
             return OccCurve.wrap(handleCurve.get()!);
         });
@@ -362,13 +362,13 @@ export class OccCompositeSurface extends OccSurface implements ICompositeSurface
 }
 
 export class OccBSplineSurface extends OccSurface implements IBSplineSurface {
-    constructor(bsplineSurface: Geom_BSplineSurface) {
+    constructor(private bsplineSurface: Geom_BSplineSurface) {
         super(bsplineSurface);
     }
 }
 
 export class OccBezierSurface extends OccSurface implements IBezierSurface {
-    constructor(bezierSurface: Geom_BezierSurface) {
+    constructor(private bezierSurface: Geom_BezierSurface) {
         super(bezierSurface);
     }
 }

@@ -139,7 +139,7 @@ describe("Command System", () => {
 
             setTimeout(() => {
                 command.cancel();
-                resolvePromise?.();
+                resolvePromise!();
             }, 50);
 
             await executePromise;
@@ -220,7 +220,7 @@ describe("Command System", () => {
 
             expect((command as any).checkCanceled.call(command)).toBe(false);
 
-            command.controller = mockController;
+            command["controller"] = mockController;
 
             expect((command as any).checkCanceled.call(command)).toBe(true);
         });
@@ -309,8 +309,8 @@ describe("Command System", () => {
                     disposeCalled = true;
                 },
             } as unknown as AsyncController;
-            command.controller = mockController;
-            expect(command.controller).toBe(mockController);
+            command["controller"] = mockController;
+            expect(command["controller"]).toBe(mockController);
             await command.execute(mockApplication);
             expect(disposeCalled).toBe(true);
         });
@@ -318,7 +318,7 @@ describe("Command System", () => {
         test("should not dispose controller if not set", async () => {
             const command = new TestCommand();
             await command.execute(mockApplication);
-            expect(command.controller).toBeUndefined();
+            expect(command["controller"]).toBeUndefined();
         });
 
         test("should set isCanceled when cancel is called", () => {
@@ -369,16 +369,16 @@ describe("Command System", () => {
                 },
             } as unknown as AsyncController;
 
-            command.controller = mockController;
-            expect(command.controller).toBe(mockController);
+            command["controller"] = mockController;
+            expect(command["controller"]).toBe(mockController);
 
             const anotherController = {
                 dispose: () => {},
             } as unknown as AsyncController;
-            command.controller = anotherController;
+            command["controller"] = anotherController;
 
             expect(disposeCallCount).toBe(1);
-            expect(command.controller).toBe(anotherController);
+            expect(command["controller"]).toBe(anotherController);
         });
 
         test("should not reassign same controller", () => {
@@ -390,10 +390,10 @@ describe("Command System", () => {
                 },
             } as unknown as AsyncController;
 
-            command.controller = mockController;
+            command["controller"] = mockController;
             disposeCallCount = 0;
 
-            command.controller = mockController;
+            command["controller"] = mockController;
 
             expect(disposeCallCount).toBe(0);
         });

@@ -76,7 +76,7 @@ export class I18n {
     }
 
     static translateLanguage(language: Locale, key: I18nKeys, ...args: any[]) {
-        let text = language.translation[key] ?? languages.get("en")?.translation[key];
+        let text = language.translation[key] ?? languages.get("en")!.translation[key];
         if (text === undefined) {
             console.warn(`No translation for ${key} in ${language}`);
             return key;
@@ -88,7 +88,7 @@ export class I18n {
     }
 
     static isI18nKey(key: string): key is I18nKeys {
-        return key in languages.get("zh-CN")?.translation;
+        return key in languages.get("zh-CN")!.translation;
     }
 
     static set(dom: HTMLElement, path: I18nPath, key: I18nKeys, ...args: any[]) {

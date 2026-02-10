@@ -19,7 +19,7 @@ describe("test Transform", () => {
         expect(p2).toStrictEqual(new XYZ(10, 0, 0));
         expect(v2).toStrictEqual(v1);
         const t2 = t1.invert();
-        expect(t2?.ofPoint(p2)).toStrictEqual(p1);
+        expect(t2!.ofPoint(p2)).toStrictEqual(p1);
 
         const t3 = Matrix4.fromAxisRad(XYZ.zero, XYZ.unitZ, Math.PI * 0.5);
         expect(t3.ofVector(v1).isEqualTo(new XYZ(-1, 0, 0))).toBeTruthy();
@@ -31,7 +31,7 @@ describe("test Transform", () => {
         const t5 = t1.multiply(t3);
         expect(t5.ofPoint(XYZ.unitY).isEqualTo(new XYZ(-1, 10, 0))).toBeTruthy();
         const t6 = t5.invert();
-        expect(t6?.ofPoint(new XYZ(-1, 10, 0)).isEqualTo(XYZ.unitY)).toBeTruthy();
+        expect(t6!.ofPoint(new XYZ(-1, 10, 0)).isEqualTo(XYZ.unitY)).toBeTruthy();
     });
 
     test("test mirror", () => {

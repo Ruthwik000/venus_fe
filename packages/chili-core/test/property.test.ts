@@ -287,7 +287,7 @@ describe("property", () => {
         test("should handle property with number as key", () => {
             class TestClass {
                 @property("number.display" as I18nKeys)
-                0!: string;
+                [0]!: string;
             }
 
             const properties = PropertyUtils.getOwnProperties(TestClass.prototype);
