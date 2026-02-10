@@ -102,15 +102,24 @@ class ToggleConverter implements IConverter {
 }
 
 export class RibbonToggleButton extends RibbonButton {
-    constructor(data: CommandData, size: ButtonSize) {
+    constructor(
+        private readonly data: CommandData,
+        size: ButtonSize,
+    ) {
         super(data.key, data.icon, size, () => {
             PubSub.default.pub("executeCommand", data.key);
         });
 
-        if (data.toggle) {
-            data.toggle.converter = new ToggleConverter(this.className, style.checked);
-            data.toggle.setBinding(this, "className");
+        if (this.data.toggle) {
+            this.data.toggle.removeBinding();
+            this.data.toggle.converter = new ToggleConverter(this.className, style.checked);
+            this.data.toggle.setBinding(this, "className");
         }
+    }
+
+    override dispose(): void {
+        super.dispose();
+        this.data.toggle?.removeBinding();
     }
 }
 

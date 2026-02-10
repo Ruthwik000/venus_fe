@@ -6,3 +6,11 @@ coverage
 .DS_Store
 .clang-format
 CMakeUserPresets.json
+
+# Generated Tailwind CSS
+packages/chili-web/src/output.css
+
+# Environment variables
+.env
+.env.local
+.env.*.local

@@ -3,8 +3,8 @@
 
 import { button } from "chili-controls";
 import type { IApplication } from "chili-core";
-import style from "./aiChat.module.css";
 import { AIChatPanel } from "./aiChat";
+import style from "./aiChat.module.css";
 
 export class AIChatToggle extends HTMLElement {
     private chatPanel?: AIChatPanel;

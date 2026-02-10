@@ -385,6 +385,7 @@ export class AIChatPanel extends HTMLElement {
             }),
         );
 
+        const inputContainer = div({ className: style.chatInput }, this.inputField, this.sendButton);
         const sessionContainer = div(
             { className: style.sessionContainer },
             this.sessionIdInput,
@@ -485,6 +486,25 @@ export class AIChatPanel extends HTMLElement {
         }
     }
 
+    private async generateModel(prompt: string) {
+        let response: Response;
+
+        try {
+            // Call the generation API
+            response = await fetch("http://127.0.0.1:8000/generate", {
+                method: "POST",
+                mode: "cors",
+                headers: {
+                    accept: "application/json",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ prompt: prompt }),
+            });
+        } catch (fetchError) {
+            throw new Error(
+                "Cannot connect to the API server. Make sure the backend is running on http://127.0.0.1:8000",
+            );
+        }
     private showQuestionForm(questions: Question[]) {
         const formContainer = div({ className: style.questionFormContainer });
         
