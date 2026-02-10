@@ -295,12 +295,28 @@ export class AIChatPanel extends HTMLElement {
         let downloadUrl = null;
 
         console.log("Checking data.data:", data.data);
+        console.log("Checking data.data?.download_urls:", data.data?.download_urls);
         console.log("Checking data.data?.download_url:", data.data?.download_url);
         console.log("Checking data.data?.files:", data.data?.files);
 
-        if (data.data && data.data.download_url) {
+        if (data.data && data.data.download_urls) {
+            // Backend returns download_urls object with step/stl keys
+            const urls = data.data.download_urls;
+            downloadUrl =
+                urls.step ||
+                urls.stl ||
+                Object.values(urls).find((u: any) => typeof u === "string" && u.length > 0);
+            console.log("✅ Found in data.data.download_urls:", downloadUrl);
+        } else if (data.data && data.data.download_url) {
             downloadUrl = data.data.download_url;
             console.log("✅ Found in data.data.download_url:", downloadUrl);
+        } else if (data.download_urls) {
+            const urls = data.download_urls;
+            downloadUrl =
+                urls.step ||
+                urls.stl ||
+                Object.values(urls).find((u: any) => typeof u === "string" && u.length > 0);
+            console.log("✅ Found in data.download_urls:", downloadUrl);
         } else if (data.download_url) {
             downloadUrl = data.download_url;
             console.log("✅ Found in data.download_url:", downloadUrl);
