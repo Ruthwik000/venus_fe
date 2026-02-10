@@ -98,7 +98,9 @@ export class SelectMeasure extends CancelableCommand {
         const li = document.createElement("li");
         li.textContent = item.toFixed(2);
         this.#sumUI?.list.append(li);
-        this.#sumUI?.value.textContent = this.#sum.toFixed(2);
+        if (this.#sumUI?.value) {
+            this.#sumUI.value.textContent = this.#sum.toFixed(2);
+        }
     }
 
     protected override afterExecute(): void {
