@@ -158,8 +158,46 @@ export function renderSignup(_app: IApplication, router: IRouter): void {
         router.navigate("/login");
     });
 
-    document.getElementById("signup-form")?.addEventListener("submit", (e) => {
+    document.getElementById("signup-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
-        alert("Email/password authentication is not yet implemented. Please use Google Sign-In.");
+        const form = e.target as HTMLFormElement;
+        const username = (form.querySelector('input[type="text"]') as HTMLInputElement).value;
+        const email = (form.querySelector('input[type="email"]') as HTMLInputElement).value;
+        const password = (form.querySelector('input[type="password"]') as HTMLInputElement).value;
+        const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Creating account...";
+        }
+
+        try {
+            // Create user with email/password and send verification email
+            await authService.signUpWithEmail(email, password);
+
+            // Store username and email for later use
+            localStorage.setItem("pendingUsername", username);
+            localStorage.setItem("userEmail", email);
+
+            // Show success message
+            alert(
+                `Account registration initiated! 📧\n\n` +
+                    `A verification email has been sent to:\n${email}\n\n` +
+                    `Please check your inbox and click the verification link to complete your registration.\n\n` +
+                    `Note: The email may take a few minutes to arrive. Check your spam folder if you don't see it.`,
+            );
+
+            // Redirect to email verification page
+            router.navigate("/verify-email");
+        } catch (error: unknown) {
+            console.error("Signup failed:", error);
+            const errorMessage =
+                error instanceof Error ? error.message : "Failed to create account. Please try again.";
+            alert(errorMessage);
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Create Account";
+            }
+        }
     });
 }
