@@ -13,7 +13,6 @@ import {
     PubSub,
     type RibbonTab,
 } from "chili-core";
-import { AIChatToggle } from "./aiChat";
 import style from "./editor.module.css";
 import { OKCancel } from "./okCancel";
 import { ProjectView } from "./project";
@@ -33,7 +32,7 @@ export class Editor extends HTMLElement {
     private _sidebarWidth: number = 360;
     private _isResizingSidebar: boolean = false;
     private _sidebarEl: HTMLDivElement | null = null;
-    private readonly _aiChatToggle: AIChatToggle;
+    private _isSidebarVisible: boolean = true;
 
     constructor(
         readonly app: IApplication,
@@ -44,12 +43,10 @@ export class Editor extends HTMLElement {
         const viewport = new LayoutViewport(app);
         viewport.classList.add(style.viewport);
         this._selectionController = new OKCancel();
-        this._aiChatToggle = new AIChatToggle(app);
         this._viewportContainer = div(
             { className: style.viewportContainer },
             this._selectionController,
             viewport,
-            this._aiChatToggle,
         );
         this.clearSelectionControl();
         this.render();
@@ -108,12 +105,14 @@ export class Editor extends HTMLElement {
         PubSub.default.sub("showSelectionControl", this.showSelectionControl);
         PubSub.default.sub("editMaterial", this._handleMaterialEdit);
         PubSub.default.sub("clearSelectionControl", this.clearSelectionControl);
+        PubSub.default.sub("toggleLeftSidebar", this._toggleSidebar);
     }
 
     disconnectedCallback(): void {
         PubSub.default.remove("showSelectionControl", this.showSelectionControl);
         PubSub.default.remove("editMaterial", this._handleMaterialEdit);
         PubSub.default.remove("clearSelectionControl", this.clearSelectionControl);
+        PubSub.default.remove("toggleLeftSidebar", this._toggleSidebar);
     }
 
     private readonly showSelectionControl = (controller: AsyncController) => {
@@ -141,6 +140,13 @@ export class Editor extends HTMLElement {
         const group = tab?.groups.find((p) => p.groupName === groupName);
         group?.items.push(command);
     }
+
+    private readonly _toggleSidebar = () => {
+        this._isSidebarVisible = !this._isSidebarVisible;
+        if (this._sidebarEl) {
+            this._sidebarEl.style.display = this._isSidebarVisible ? "flex" : "none";
+        }
+    };
 }
 
 customElements.define("chili-editor", Editor);

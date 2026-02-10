@@ -223,27 +223,26 @@
 }
 
 .toggleButton {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background-color: var(--button-secondary-background);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background-color: var(--panel-background-color);
     color: var(--foreground-color);
     border: none;
     cursor: pointer;
-    font-size: 24px;
+    font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 9999;
-    transition: transform 0.2s;
+    transition: background-color 0.2s;
 }
 
 .toggleButton:hover {
-    transform: scale(1.1);
+    background-color: var(--hover-background-color);
+}
+
+.toggleButton:active {
+    background-color: var(--primary-color);
 }
 
 /* Question Form Styles */
@@ -370,9 +369,6 @@
     transform: scale(0.98);
 }
 
-.toggleButton:active {
-    transform: scale(0.95);
-}
 /* Streaming Message Animation */
 .streaming {
     border-left: 3px solid #4caf50;
