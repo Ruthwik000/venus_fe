@@ -2,6 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import { AppBuilder } from "chili-builder";
+import type { Router } from "chili-core";
 import { authService, type IApplication, Logger, type User } from "chili-core";
 import { Loading } from "./loading";
 import "./output.css";
