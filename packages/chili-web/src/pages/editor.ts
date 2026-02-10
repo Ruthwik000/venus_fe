@@ -1,8 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import type { IApplication } from "chili-core";
-import type { IRouter } from "chili-core/src/router";
+import type { IApplication, IRouter } from "chili-core";
 
 export async function renderEditor(app: IApplication, _router: IRouter): Promise<void> {
     const container = document.getElementById("app") || document.body;

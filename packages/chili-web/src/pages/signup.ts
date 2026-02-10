@@ -1,8 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { authService, type IApplication } from "chili-core";
-import type { IRouter } from "chili-core/src/router";
+import { authService, type IApplication, type IRouter } from "chili-core";
 
 export function renderSignup(_app: IApplication, router: IRouter): void {
     const container = document.getElementById("app") || document.body;
