@@ -46,11 +46,13 @@ export abstract class SelectStep implements IStep {
             document.visual.highlighter.clear();
         }
 
-        return Promise.try(this.select.bind(this), document, controller).finally(() => {
+        try {
+            return await this.select(document, controller);
+        } finally {
             document.selection.shapeType = shapeType;
             document.selection.shapeFilter = shapeFilter;
             document.selection.nodeFilter = nodeFilter;
-        });
+        }
     }
 
     abstract select(document: IDocument, controller: AsyncController): Promise<SnapResult | undefined>;
@@ -68,7 +70,7 @@ export class SelectShapeStep extends SelectStep {
         if (shapes.length === 0) return undefined;
         return {
             view: document.application.activeView!,
-            shapes,
+            shapes: shapes,
             nodes: shapes.map((x) => x.owner.node),
         };
     }
@@ -88,7 +90,7 @@ export class SelectNodeStep implements IStep {
             document.visual.highlighter.clear();
         }
 
-        return Promise.try(async () => {
+        try {
             const nodes = await document.selection.pickNode(
                 this.prompt,
                 controller,
@@ -100,9 +102,9 @@ export class SelectNodeStep implements IStep {
                 shapes: [],
                 nodes,
             };
-        }).finally(() => {
+        } finally {
             document.selection.nodeFilter = nodeFilter;
-        });
+        }
     }
 }
 

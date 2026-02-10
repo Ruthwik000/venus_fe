@@ -51,6 +51,7 @@ describe("ModelManager", () => {
         });
 
         test("should initialize with empty node changed observers", () => {
+            // @ts-expect-error - Accessing private property for testing
             expect(modelManager._nodeChangedObservers.size).toBe(0);
         });
     });
@@ -119,9 +120,11 @@ describe("ModelManager", () => {
         test("should add and remove node observer", () => {
             const observer: OnNodeChanged = () => {};
             modelManager.addNodeObserver(observer);
+            // @ts-expect-error - Accessing private property for testing
             expect(modelManager._nodeChangedObservers.has(observer)).toBe(true);
 
             modelManager.removeNodeObserver(observer);
+            // @ts-expect-error - Accessing private property for testing
             expect(modelManager._nodeChangedObservers.has(observer)).toBe(false);
         });
 
@@ -194,6 +197,7 @@ describe("ModelManager", () => {
 
     describe("findNode", () => {
         test("should return undefined when rootNode is not initialized", () => {
+            // @ts-expect-error - Accessing private property for testing
             modelManager._rootNode = undefined;
             const result = modelManager.findNode(() => true);
             expect(result).toBeUndefined();
@@ -232,6 +236,7 @@ describe("ModelManager", () => {
 
     describe("findNodes", () => {
         test("should return empty array when rootNode is not initialized", () => {
+            // @ts-expect-error - Accessing private property for testing
             modelManager._rootNode = undefined;
             const result = modelManager.findNodes();
             expect(result).toEqual([]);
@@ -314,6 +319,7 @@ describe("ModelManager", () => {
             const observer: OnNodeChanged = () => {};
             modelManager.addNodeObserver(observer);
             modelManager.dispose();
+            // @ts-expect-error - Accessing private property for testing
             expect(modelManager._nodeChangedObservers.size).toBe(0);
         });
 
@@ -326,6 +332,7 @@ describe("ModelManager", () => {
 
         test("should set rootNode to undefined", () => {
             modelManager.dispose();
+            // @ts-expect-error - Accessing private property for testing
             expect(modelManager._rootNode).toBeUndefined();
         });
 

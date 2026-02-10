@@ -209,6 +209,7 @@ describe("Component", () => {
         const component = new Component("Test", [meshNode]);
         const size = createComponentSize();
 
+        // @ts-expect-error - Accessing private method for testing
         component.getSize([meshNode], size);
 
         expect(size.meshPosition).toBe(3);

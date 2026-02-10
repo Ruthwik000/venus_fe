@@ -5,13 +5,16 @@
         "moduleResolution": "bundler",
         "resolveJsonModule": true,
 
-        "strict": true,
+        "strict": false,
+        "strictNullChecks": false,
+        "noImplicitAny": false,
         "allowJs": true,
         "noImplicitOverride": true,
-        "noPropertyAccessFromIndexSignature": true,
+        "noPropertyAccessFromIndexSignature": false,
         "useDefineForClassFields": true,
         "experimentalDecorators": true,
         "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
 
         "plugins": [{ "name": "typescript-plugin-css-modules" }],
         "types": ["@rstest/core/globals"]

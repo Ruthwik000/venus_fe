@@ -27,25 +27,25 @@ import commonStyle from "./common.module.css";
 import style from "./input.module.css";
 import { PropertyBase } from "./propertyBase";
 
-class ArrayValueConverter implements IConverter {
+class ArrayValueConverter implements IConverter<any, string> {
     constructor(
         readonly objects: any[],
         readonly property: Property,
         readonly converter?: IConverter,
     ) {}
 
-    convert(_value: any): Result<string> {
-        return Result.ok(this.getDefaultValue());
+    convert(_value: any): Result<string, string> {
+        return Result.ok(this.getDefaultValue()) as Result<string, string>;
     }
 
-    convertBack?(_value: string): Result<any> {
+    convertBack?(_value: string): Result<any, string> {
         throw new Error("Method not implemented.");
     }
 
     private getValueString(obj: any): string {
         const value = obj[this.property.name];
         const cvalue = this.converter?.convert(value);
-        return cvalue?.isOk ? cvalue.value : String(value);
+        return cvalue?.isOk ? String(cvalue.value) : String(value);
     }
 
     private getDefaultValue() {

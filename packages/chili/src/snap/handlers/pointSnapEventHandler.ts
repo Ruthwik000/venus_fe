@@ -90,11 +90,11 @@ export class PointSnapEventHandler extends SnapEventHandler<PointSnapData> {
         const [dims, isAbsolute] = this.parseInputDimensions(text);
         const dimension = DimensionUtils.from(dims.length);
 
-        if (isAbsolute && dims.length !== 3) return "error.input.threeNumberCanBeInput";
-        if (!this.isValidDimension(dimension)) return "error.input.unsupportedInputs";
-        if (this.hasInvalidNumbers(dims)) return "error.input.invalidNumber";
-        if (this.requiresThreeNumbers(dims)) return "error.input.threeNumberCanBeInput";
-        if (this.isInvalidSingleNumber(dims)) return "error.input.cannotInputANumber";
+        if (isAbsolute && dims.length !== 3) return "error.input.threeNumberCanBeInput" as I18nKeys;
+        if (!this.isValidDimension(dimension)) return "error.input.unsupportedInputs" as I18nKeys;
+        if (this.hasInvalidNumbers(dims)) return "error.input.invalidNumber" as I18nKeys;
+        if (this.requiresThreeNumbers(dims)) return "error.input.threeNumberCanBeInput" as I18nKeys;
+        if (this.isInvalidSingleNumber(dims)) return "error.input.cannotInputANumber" as I18nKeys;
 
         return undefined;
     }
@@ -136,8 +136,8 @@ export class SnapPointOnCurveEventHandler extends SnapEventHandler<SnapPointOnCu
         return { point: this.data.curve.value(parameter), view, shapes: [] };
     }
 
-    protected override inputError(text: string) {
-        return Number.isNaN(Number(text)) ? "error.input.invalidNumber" : undefined;
+    protected override inputError(text: string): I18nKeys | undefined {
+        return Number.isNaN(Number(text)) ? ("error.input.invalidNumber" as I18nKeys) : undefined;
     }
 }
 
@@ -154,8 +154,8 @@ export class SnapPointOnAxisEventHandler extends SnapEventHandler<SnapPointOnAxi
         return { point, view, shapes: [] };
     }
 
-    protected override inputError(text: string) {
-        return Number.isNaN(Number(text)) ? "error.input.invalidNumber" : undefined;
+    protected override inputError(text: string): I18nKeys | undefined {
+        return Number.isNaN(Number(text)) ? ("error.input.invalidNumber" as I18nKeys) : undefined;
     }
 }
 

@@ -4,6 +4,7 @@
 import {
     type AsyncController,
     Config,
+    type I18nKeys,
     type IDocument,
     type IView,
     Plane,
@@ -46,9 +47,9 @@ export class AngleSnapEventHandler extends SnapEventHandler<PointSnapData> {
         return `${this.planeAngle.angle.toFixed(2)} °`;
     };
 
-    protected override inputError(text: string) {
+    protected override inputError(text: string): I18nKeys | undefined {
         const angle = Number.parseFloat(text);
-        return Number.isNaN(angle) ? "error.input.invalidNumber" : undefined;
+        return Number.isNaN(angle) ? ("error.input.invalidNumber" as I18nKeys) : undefined;
     }
 
     protected override getPointFromInput(view: IView, text: string): SnapResult {

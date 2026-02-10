@@ -220,6 +220,7 @@ describe("Command System", () => {
 
             expect((command as any).checkCanceled.call(command)).toBe(false);
 
+            // @ts-expect-error - Accessing protected property for testing
             command.controller = mockController;
 
             expect((command as any).checkCanceled.call(command)).toBe(true);
@@ -309,7 +310,9 @@ describe("Command System", () => {
                     disposeCalled = true;
                 },
             } as unknown as AsyncController;
+            // @ts-expect-error - Accessing protected property for testing
             command.controller = mockController;
+            // @ts-expect-error - Accessing protected property for testing
             expect(command.controller).toBe(mockController);
             await command.execute(mockApplication);
             expect(disposeCalled).toBe(true);
@@ -318,6 +321,7 @@ describe("Command System", () => {
         test("should not dispose controller if not set", async () => {
             const command = new TestCommand();
             await command.execute(mockApplication);
+            // @ts-expect-error - Accessing protected property for testing
             expect(command.controller).toBeUndefined();
         });
 
@@ -369,15 +373,19 @@ describe("Command System", () => {
                 },
             } as unknown as AsyncController;
 
+            // @ts-expect-error - Accessing protected property for testing
             command.controller = mockController;
+            // @ts-expect-error - Accessing protected property for testing
             expect(command.controller).toBe(mockController);
 
             const anotherController = {
                 dispose: () => {},
             } as unknown as AsyncController;
+            // @ts-expect-error - Accessing protected property for testing
             command.controller = anotherController;
 
             expect(disposeCallCount).toBe(1);
+            // @ts-expect-error - Accessing protected property for testing
             expect(command.controller).toBe(anotherController);
         });
 
@@ -390,9 +398,11 @@ describe("Command System", () => {
                 },
             } as unknown as AsyncController;
 
+            // @ts-expect-error - Accessing protected property for testing
             command.controller = mockController;
             disposeCallCount = 0;
 
+            // @ts-expect-error - Accessing protected property for testing
             command.controller = mockController;
 
             expect(disposeCallCount).toBe(0);

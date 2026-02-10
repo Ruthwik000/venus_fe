@@ -14,6 +14,7 @@ import { TestDocument } from "./testDocument";
 
 @serializable(["k1" as any])
 class TestObject {
+    k1!: string;
     protected k2: string = "k2";
     public k3: string = "k3";
     @serialze()
