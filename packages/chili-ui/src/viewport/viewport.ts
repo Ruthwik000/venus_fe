@@ -314,8 +314,8 @@ export class Viewport extends HTMLElement {
 
     private readonly pointerMove = (view: IView, event: PointerEvent) => {
         if (this._flyout) {
-            this._flyout.style.top = event.offsetY + "px";
-            this._flyout.style.left = event.offsetX + "px";
+            this._flyout.style.top = `${event.offsetY}px`;
+            this._flyout.style.left = `${event.offsetX}px`;
         }
         if (view.document.visual.eventHandler.isEnabled)
             view.document.visual.eventHandler.pointerMove(view, event);

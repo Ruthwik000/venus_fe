@@ -55,7 +55,7 @@ export class Ellipse extends CreateFaceableCommand {
     private readonly getRadius2Data = (): LengthAtAxisSnapData => {
         const point = this.stepDatas[0].point!;
         const plane = this.stepDatas[1].plane!;
-        const direction = plane.normal.cross(this.stepDatas[1].point!.sub(point)).normalize()!;
+        const direction = plane.normal.cross(this.stepDatas[1].point?.sub(point)).normalize()!;
         return {
             point: point,
             preview: this.ellipsePreview,

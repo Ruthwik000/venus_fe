@@ -27,8 +27,8 @@ export class Break extends MultistepCommand {
             const curve = shape.curve;
             const point = this.stepDatas[0].shapes[0].owner.node
                 .worldTransform()
-                .invert()!
-                .ofPoint(this.stepDatas[1].point!);
+                .invert()
+                ?.ofPoint(this.stepDatas[1].point!);
             const parameter = curve.parameter(point, 1e-3);
             if (parameter === undefined) return;
 
@@ -38,7 +38,7 @@ export class Break extends MultistepCommand {
 
             const edge2 = this.document.application.shapeFactory.edge(curve2);
 
-            const model = this.stepDatas[0].nodes![0] as ShapeNode;
+            const model = this.stepDatas[0].nodes?.[0] as ShapeNode;
             const model1 = new EditableShapeNode(this.document, `${model.name}_1`, shape);
             const model2 = new EditableShapeNode(this.document, `${model.name}_2`, edge2);
             model1.transform = model.transform;

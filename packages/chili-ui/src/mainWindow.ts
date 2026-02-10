@@ -45,7 +45,7 @@ export class MainWindow extends HTMLElement implements IWindow {
             e.preventDefault();
             e.stopPropagation();
         };
-        this.addEventListener("scroll", (e) => {
+        this.addEventListener("scroll", (_e) => {
             this.scrollTop = 0;
         });
     }
@@ -114,7 +114,7 @@ export class MainWindow extends HTMLElement implements IWindow {
         this._editor = new Editor(app, this.tabs);
     }
 
-    registerHomeCommand(groupName: I18nKeys, command: CommandKeys | Button): void {
+    registerHomeCommand(_groupName: I18nKeys, _command: CommandKeys | Button): void {
         throw new Error("Method not implemented.");
     }
 

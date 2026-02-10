@@ -3,14 +3,16 @@
 
 import type { IApplication, IRouter } from "chili-core";
 
-export async function renderEditor(app: IApplication, router: IRouter): Promise<void> {
+export async function renderEditor(app: IApplication, _router: IRouter): Promise<void> {
     const container = document.getElementById("app") || document.body;
 
     // Remove only our custom page elements, keeping the Chili3D UI intact
     const customElements = container.querySelectorAll(
         ".dashboard-page, .landing-page-hero, .min-h-screen, .auth-page-classic",
     );
-    customElements.forEach((el) => el.remove());
+    customElements.forEach((el) => {
+        el.remove();
+    });
 
     // Reset container to default state
     container.className = "";

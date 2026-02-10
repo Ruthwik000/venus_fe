@@ -140,7 +140,7 @@ export class ArrayCommand extends MultistepCommand {
     }
 
     private collectionPosition() {
-        this.positions = this.models!.flatMap((model) => {
+        this.positions = this.models?.flatMap((model) => {
             if (model instanceof MeshNode) {
                 return model.mesh.position ? model.transform.ofPoints(model.mesh.position) : [];
             } else if (model instanceof GeometryNode) {
@@ -188,9 +188,9 @@ export class ArrayCommand extends MultistepCommand {
     }
 
     private readonly updatePosition = (matrixs: Matrix4[]) => {
-        const positions = new Float32Array(this.positions!.length * matrixs.length);
+        const positions = new Float32Array(this.positions?.length * matrixs.length);
         for (let i = 0; i < matrixs.length; i++) {
-            positions.set(matrixs[i].ofPoints(this.positions!), i * this.positions!.length);
+            positions.set(matrixs[i].ofPoints(this.positions!), i * this.positions?.length);
         }
 
         this.document.visual.context.setPosition(this._meshId!, positions);
@@ -290,23 +290,23 @@ export class ArrayCommand extends MultistepCommand {
         points: ShapeMeshData[],
     ): ShapeMeshData[] {
         point = point ?? p1;
-        this._planeAngle!.movePoint(point);
+        this._planeAngle?.movePoint(point);
         const result = [...points];
-        if (Math.abs(this._planeAngle!.angle) > Precision.Angle) {
+        if (Math.abs(this._planeAngle?.angle) > Precision.Angle) {
             const transforms = this.getArcMatrixs(
                 center,
-                this._planeAngle!.plane.normal,
-                MathUtils.degToRad(this._planeAngle!.angle),
+                this._planeAngle?.plane.normal,
+                MathUtils.degToRad(this._planeAngle?.angle),
             );
             this.updatePosition(transforms);
 
             result.push(
                 this.meshCreatedShape(
                     "arc",
-                    this._planeAngle!.plane.normal,
+                    this._planeAngle?.plane.normal,
                     center,
                     p1,
-                    this._planeAngle!.angle,
+                    this._planeAngle?.angle,
                 ),
             );
         }
@@ -366,13 +366,13 @@ export class ArrayCommand extends MultistepCommand {
     };
 
     private boxArrayMatrixs(index: 2 | 3, xvec: XYZ, yvec: XYZ, normal: XYZ, end: XYZ) {
-        const x = xvec.multiply(this.stepDatas[1].point!.sub(this.stepDatas[0].point!).dot(xvec));
+        const x = xvec.multiply(this.stepDatas[1].point?.sub(this.stepDatas[0].point!).dot(xvec));
         let y: XYZ, z: XYZ;
         if (index === 2) {
             y = yvec.multiply(end.sub(this.stepDatas[0].point!).dot(yvec));
             z = XYZ.zero;
         } else {
-            y = yvec.multiply(this.stepDatas[2].point!.sub(this.stepDatas[0].point!).dot(yvec));
+            y = yvec.multiply(this.stepDatas[2].point?.sub(this.stepDatas[0].point!).dot(yvec));
             z = normal.multiply(end.sub(this.stepDatas[0].point!).dot(normal));
         }
         return this.getBoxTransforms(x, y, z);
@@ -383,7 +383,7 @@ export class ArrayCommand extends MultistepCommand {
             this.stepDatas[1].plane ??
             this.findPlane(this.stepDatas[1].view, this.stepDatas[0].point!, this.stepDatas[1].point);
 
-        const xvec = this.stepDatas[1].point!.sub(this.stepDatas[0].point!).normalize()!;
+        const xvec = this.stepDatas[1].point?.sub(this.stepDatas[0].point!).normalize()!;
         let normal = plane.normal;
         if (normal.isEqualTo(xvec)) {
             normal = XYZ.unitZ;
@@ -426,8 +426,8 @@ export class ArrayCommand extends MultistepCommand {
         if (this.circularPattern) {
             matrixs = this.getArcMatrixs(
                 this.stepDatas[0].point!,
-                this._planeAngle!.plane.normal,
-                MathUtils.degToRad(this._planeAngle!.angle),
+                this._planeAngle?.plane.normal,
+                MathUtils.degToRad(this._planeAngle?.angle),
             );
         } else {
             const { xvec, yvec, normal } = this.boxPlaneInfo(3);

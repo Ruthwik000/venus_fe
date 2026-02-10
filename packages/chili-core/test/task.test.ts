@@ -6,7 +6,7 @@ import { AsyncController } from "../src";
 test("test cancel", async () => {
     const controller = new AsyncController();
     expect(controller.result?.status === "cancel").toBeFalsy();
-    await new Promise((r, s) => {
+    await new Promise((r, _s) => {
         setTimeout(() => {
             controller.cancel();
             r("resolved");
@@ -18,7 +18,7 @@ test("test cancel", async () => {
 test("test fail", async () => {
     const controller = new AsyncController();
     expect(controller.result?.status === "fail").toBeFalsy();
-    await new Promise((r, s) => {
+    await new Promise((r, _s) => {
         setTimeout(() => {
             controller.fail("fail msg");
             r("resolved");
@@ -31,7 +31,7 @@ test("test fail", async () => {
 test("test complete", async () => {
     const controller = new AsyncController();
     expect(controller.result?.status === "success").toBeFalsy();
-    await new Promise((r, s) => {
+    await new Promise((r, _s) => {
         setTimeout(() => {
             controller.success();
             r("resolved");

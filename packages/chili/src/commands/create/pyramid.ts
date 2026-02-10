@@ -23,7 +23,7 @@ export class Pyramid extends RectCommandBase {
         if (plane === undefined) {
             throw new Error("plane is undefined, please report bug");
         }
-        const point = this.stepDatas[1].point!.add(this.stepDatas[0].point!).multiply(0.5);
+        const point = this.stepDatas[1].point?.add(this.stepDatas[0].point!).multiply(0.5);
         return {
             point,
             direction: plane.normal,

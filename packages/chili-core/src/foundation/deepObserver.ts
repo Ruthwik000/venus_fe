@@ -95,7 +95,7 @@ export class DeepObserver {
         let sourceHandler = handlerMap.get(deepHandler);
         if (sourceHandler) {
             sourceHandler.sources.forEach((item) => {
-                item.source.removePropertyChanged(sourceHandler!.handler);
+                item.source.removePropertyChanged(sourceHandler?.handler);
             });
         }
 
