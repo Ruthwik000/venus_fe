@@ -1,8 +1,8 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { button, div, input } from "chili-controls";
-import { type IApplication, Logger } from "chili-core";
+import { button, div, input, label } from "chili-controls";
+import { authService, I18n, type IApplication, Logger, PubSub } from "chili-core";
 import style from "./aiChat.module.css";
 
 interface Message {
@@ -30,6 +30,7 @@ export class AIChatPanel extends HTMLElement {
     private sendButton: HTMLButtonElement;
     private isProcessing: boolean = false;
     private sessionId: string;
+    private uid: string;
     private sessionIdInput: HTMLInputElement;
     private saveSessionButton: HTMLButtonElement;
     private pendingQuestions: PendingQuestions | null = null;
@@ -52,6 +53,9 @@ export class AIChatPanel extends HTMLElement {
 
         // Generate session ID
         this.sessionId = this.generateUUID();
+        // Use authenticated user's UID
+        const currentUser = authService.getCurrentUser();
+        this.uid = currentUser?.uid ?? "anonymous";
 
         this.sessionIdInput = input({
             className: style.sessionInput,
@@ -464,6 +468,7 @@ export class AIChatPanel extends HTMLElement {
 
         const data = {
             message: message,
+            uid: this.uid,
             type: "user_message",
         };
 
