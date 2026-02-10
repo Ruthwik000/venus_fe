@@ -148,8 +148,37 @@ export function renderLogin(_app: IApplication, router: IRouter): void {
         router.navigate("/signup");
     });
 
-    document.getElementById("login-form")?.addEventListener("submit", (e) => {
+    document.getElementById("login-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
-        alert("Email/password authentication is not yet implemented. Please use Google Sign-In.");
+        const form = e.target as HTMLFormElement;
+        const email = (form.querySelector('input[type="email"]') as HTMLInputElement).value;
+        const password = (form.querySelector('input[type="password"]') as HTMLInputElement).value;
+        const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Signing in...";
+        }
+
+        try {
+            // Sign in with email/password
+            const user = await authService.signInWithEmail(email, password);
+
+            // Email is verified - proceed with login
+            localStorage.setItem("isAuthenticated", "true");
+            localStorage.setItem("username", user.displayName || email.split("@")[0]);
+            localStorage.setItem("userEmail", user.email || "");
+            router.navigate("/dashboard");
+        } catch (error: unknown) {
+            console.error("Login failed:", error);
+            const errorMessage =
+                error instanceof Error ? error.message : "Failed to sign in. Please try again.";
+            alert(errorMessage);
+
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Sign In";
+            }
+        }
     });
 }

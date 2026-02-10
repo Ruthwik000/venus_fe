@@ -89,6 +89,9 @@ export default defineConfig({
             "process.env.VITE_FIREBASE_MEASUREMENT_ID": JSON.stringify(
                 process.env.VITE_FIREBASE_MEASUREMENT_ID,
             ),
+            "process.env.VITE_EMAILJS_SERVICE_ID": JSON.stringify(process.env.VITE_EMAILJS_SERVICE_ID),
+            "process.env.VITE_EMAILJS_TEMPLATE_ID": JSON.stringify(process.env.VITE_EMAILJS_TEMPLATE_ID),
+            "process.env.VITE_EMAILJS_PUBLIC_KEY": JSON.stringify(process.env.VITE_EMAILJS_PUBLIC_KEY),
         }),
         new rspack.HtmlRspackPlugin({
             template: "./public/index.html",
