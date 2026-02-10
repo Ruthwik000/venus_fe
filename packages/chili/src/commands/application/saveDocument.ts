@@ -1,7 +1,16 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { command, I18n, type IApplication, type ICommand, PubSub } from "chili-core";
+import {
+    cloudinaryService,
+    command,
+    I18n,
+    type IApplication,
+    type ICommand,
+    Logger,
+    PubSub,
+    projectService,
+} from "chili-core";
 
 @command({
     key: "doc.save",
@@ -10,11 +19,40 @@ import { command, I18n, type IApplication, type ICommand, PubSub } from "chili-c
 })
 export class SaveDocument implements ICommand {
     async execute(app: IApplication): Promise<void> {
-        if (!app.activeView?.document) return;
+        const document = app.activeView?.document;
+        if (!document) return;
         PubSub.default.pub(
             "showPermanent",
             async () => {
-                await app.activeView?.document.save();
+                // 1. Save locally (IndexedDB) as before
+                await document.save();
+
+                // 2. Upload to Cloudinary & update Firestore if a project session is active
+                const sessionId = localStorage.getItem("currentSessionId");
+                if (sessionId) {
+                    try {
+                        const serialized = document.serialize();
+                        const fileContent = JSON.stringify(serialized);
+
+                        // Upload .cd file to Cloudinary
+                        const uploadResult = await cloudinaryService.uploadProjectFile(
+                            fileContent,
+                            document.name,
+                            sessionId,
+                        );
+                        Logger.info(`Uploaded to Cloudinary: ${uploadResult.secure_url}`);
+
+                        // Update Firestore with the Cloudinary URL
+                        await projectService.updateProjectFile(sessionId, uploadResult.secure_url);
+                        await projectService.updateProjectName(sessionId, document.name);
+
+                        Logger.info("Project saved to cloud successfully");
+                    } catch (error) {
+                        Logger.error("Cloud save failed (local save succeeded):", error);
+                        console.error("Cloud save error:", error);
+                    }
+                }
+
                 PubSub.default.pub("showToast", "toast.document.saved");
             },
             "toast.excuting{0}",

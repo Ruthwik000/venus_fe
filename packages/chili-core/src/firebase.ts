@@ -20,10 +20,16 @@ import {
     addDoc,
     collection,
     deleteDoc,
+    doc,
+    getDoc,
     getDocs,
     getFirestore,
+    orderBy,
     query,
     serverTimestamp,
+    setDoc,
+    type Timestamp,
+    updateDoc,
     where,
 } from "firebase/firestore";
 
@@ -268,5 +274,126 @@ export const authService: AuthService = {
     },
 };
 
-export { analytics, auth };
+// ─── Project Schema ─────────────────────────────────────────────────────────
+// Firestore path: users/{uid}/projects/{sessionId}
+// Fields: projectName, sessionId, createdDate, lastModified, fileUrl
+
+export interface ProjectData {
+    projectName: string;
+    sessionId: string;
+    createdDate: any; // Firestore Timestamp
+    lastModified: any; // Firestore Timestamp
+    fileUrl: string; // Cloudinary URL for the .cd file
+}
+
+export interface ProjectService {
+    createProject: (projectName: string) => Promise<ProjectData>;
+    getProjects: () => Promise<ProjectData[]>;
+    getProject: (sessionId: string) => Promise<ProjectData | null>;
+    updateProjectFile: (sessionId: string, fileUrl: string) => Promise<void>;
+    updateProjectName: (sessionId: string, newName: string) => Promise<void>;
+    deleteProject: (sessionId: string) => Promise<void>;
+}
+
+function generateSessionId(): string {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
+
+export const projectService: ProjectService = {
+    async createProject(projectName: string): Promise<ProjectData> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const sessionId = generateSessionId();
+        const projectData: ProjectData = {
+            projectName,
+            sessionId,
+            createdDate: serverTimestamp(),
+            lastModified: serverTimestamp(),
+            fileUrl: "",
+        };
+
+        // Store at users/{uid}/projects/{sessionId}
+        const projectRef = doc(db, "users", user.uid, "projects", sessionId);
+        await setDoc(projectRef, projectData);
+
+        // Return with a client-side date for immediate use
+        return {
+            ...projectData,
+            createdDate: new Date(),
+            lastModified: new Date(),
+        };
+    },
+
+    async getProjects(): Promise<ProjectData[]> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const projectsRef = collection(db, "users", user.uid, "projects");
+        const q = query(projectsRef, orderBy("lastModified", "desc"));
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map((docSnap) => {
+            const data = docSnap.data() as ProjectData;
+            return {
+                ...data,
+                // Convert Firestore timestamps to JS dates for UI
+                createdDate: data.createdDate?.toDate?.() ?? new Date(),
+                lastModified: data.lastModified?.toDate?.() ?? new Date(),
+            };
+        });
+    },
+
+    async getProject(sessionId: string): Promise<ProjectData | null> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const projectRef = doc(db, "users", user.uid, "projects", sessionId);
+        const snap = await getDoc(projectRef);
+        if (!snap.exists()) return null;
+
+        const data = snap.data() as ProjectData;
+        return {
+            ...data,
+            createdDate: data.createdDate?.toDate?.() ?? new Date(),
+            lastModified: data.lastModified?.toDate?.() ?? new Date(),
+        };
+    },
+
+    async updateProjectFile(sessionId: string, fileUrl: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const projectRef = doc(db, "users", user.uid, "projects", sessionId);
+        await updateDoc(projectRef, {
+            fileUrl,
+            lastModified: serverTimestamp(),
+        });
+    },
+
+    async updateProjectName(sessionId: string, newName: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const projectRef = doc(db, "users", user.uid, "projects", sessionId);
+        await updateDoc(projectRef, {
+            projectName: newName,
+            lastModified: serverTimestamp(),
+        });
+    },
+
+    async deleteProject(sessionId: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const projectRef = doc(db, "users", user.uid, "projects", sessionId);
+        await deleteDoc(projectRef);
+    },
+};
+
+export { analytics, auth, db };
 export type { User };

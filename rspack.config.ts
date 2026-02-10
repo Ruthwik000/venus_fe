@@ -92,6 +92,12 @@ export default defineConfig({
             "process.env.VITE_EMAILJS_SERVICE_ID": JSON.stringify(process.env.VITE_EMAILJS_SERVICE_ID),
             "process.env.VITE_EMAILJS_TEMPLATE_ID": JSON.stringify(process.env.VITE_EMAILJS_TEMPLATE_ID),
             "process.env.VITE_EMAILJS_PUBLIC_KEY": JSON.stringify(process.env.VITE_EMAILJS_PUBLIC_KEY),
+            "process.env.VITE_CLOUDINARY_CLOUD_NAME": JSON.stringify(process.env.VITE_CLOUDINARY_CLOUD_NAME),
+            "process.env.VITE_CLOUDINARY_API_KEY": JSON.stringify(process.env.VITE_CLOUDINARY_API_KEY),
+            "process.env.VITE_CLOUDINARY_API_SECRET": JSON.stringify(process.env.VITE_CLOUDINARY_API_SECRET),
+            "process.env.VITE_CLOUDINARY_UPLOAD_PRESET": JSON.stringify(
+                process.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+            ),
         }),
         new rspack.HtmlRspackPlugin({
             template: "./public/index.html",

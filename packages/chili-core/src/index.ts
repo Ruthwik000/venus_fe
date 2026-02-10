@@ -2,6 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 export * from "./application";
+export * from "./cloudinary";
 export * from "./command";
 export * from "./config";
 export * from "./constants";

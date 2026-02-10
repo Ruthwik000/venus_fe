@@ -3,6 +3,7 @@
 
 import { type IApplication, Logger, type RouteMatch, Router } from "chili-core";
 import { renderDashboard } from "./pages/dashboard";
+import { renderEditor } from "./pages/editor";
 import { renderLanding } from "./pages/landing";
 import { renderLogin } from "./pages/login";
 import { renderSignup } from "./pages/signup";
@@ -142,10 +143,8 @@ export function setupRoutes(app: IApplication): Router {
             }
         }
 
-        // Create a new document if needed
-        if (app.documents.size === 0) {
-            await app.newDocument(`Project-${Date.now()}`);
-        }
+        // Delegate to renderEditor which handles session ID + cloud loading
+        await renderEditor(app, router);
 
         Logger.info("Editor initialized with Chili3D UI");
     });

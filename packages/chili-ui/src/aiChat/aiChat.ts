@@ -51,8 +51,9 @@ export class AIChatPanel extends HTMLElement {
         this.inputField.className = style.inputField;
         this.inputField.placeholder = "Ask me to create a CAD model, modify it, or answer questions...";
 
-        // Generate session ID
-        this.sessionId = this.generateUUID();
+        // Use project session ID if available, otherwise generate a new one
+        const projectSessionId = localStorage.getItem("currentSessionId");
+        this.sessionId = projectSessionId || this.generateUUID();
         // Use authenticated user's UID
         const currentUser = authService.getCurrentUser();
         this.uid = currentUser?.uid ?? "anonymous";

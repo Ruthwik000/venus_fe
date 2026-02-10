@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { authService, type IApplication, type IRouter } from "chili-core";
+import { authService, type IApplication, type IRouter, type ProjectData, projectService } from "chili-core";
 
 export function renderDashboard(_app: IApplication, router: IRouter): void {
     const container = document.getElementById("app") || document.body;
@@ -92,8 +92,8 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
                     </div>
-                    <div class="stat-value">12</div>
-                    <div class="stat-trend positive">+2 this week</div>
+                    <div class="stat-value" id="total-projects-count">--</div>
+                    <div class="stat-trend positive" id="projects-trend"></div>
                 </div>
 
                 <div class="stat-glass-card">
@@ -103,8 +103,8 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <div class="stat-value">24.5</div>
-                    <div class="stat-trend neutral">Same as last week</div>
+                    <div class="stat-value">--</div>
+                    <div class="stat-trend neutral">--</div>
                 </div>
 
                 <div class="stat-glass-card">
@@ -114,8 +114,8 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                         </svg>
                     </div>
-                    <div class="stat-value">1.4 GB</div>
-                    <div class="stat-trend positive">+14%</div>
+                    <div class="stat-value">--</div>
+                    <div class="stat-trend positive">--</div>
                 </div>
             </div>
 
@@ -130,50 +130,10 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
                 </button>
             </div>
 
-            <div class="projects-modern-grid">
-                <div class="project-glass-card">
-                    <div class="project-preview">
-                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                    </div>
-                    <div class="project-info-modern">
-                        <h3>Project Alpha</h3>
-                        <p class="project-time">Updated 2 hours ago</p>
-                        <div class="project-tags">
-                            <span class="tag-modern">Modeling</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="project-glass-card">
-                    <div class="project-preview">
-                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        </svg>
-                    </div>
-                    <div class="project-info-modern">
-                        <h3>Mechanical Part</h3>
-                        <p class="project-time">Updated yesterday</p>
-                        <div class="project-tags">
-                            <span class="tag-modern">Engineering</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="project-glass-card">
-                    <div class="project-preview">
-                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                    </div>
-                    <div class="project-info-modern">
-                        <h3>Architecture Model</h3>
-                        <p class="project-time">Updated 3 days ago</p>
-                        <div class="project-tags">
-                            <span class="tag-modern">Architecture</span>
-                        </div>
-                    </div>
+            <div class="projects-modern-grid" id="projects-grid">
+                <!-- Projects will be loaded dynamically -->
+                <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
+                    <p style="color:#888;">Loading projects...</p>
                 </div>
             </div>
         </main>
@@ -181,7 +141,8 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
 
     container.appendChild(page);
 
-    // Event handlers
+    // ─── Event handlers ─────────────────────────────────────────────────
+
     document.getElementById("logout-btn")?.addEventListener("click", async () => {
         try {
             await authService.signOutUser();
@@ -192,13 +153,137 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
         }
     });
 
-    document.getElementById("new-project")?.addEventListener("click", () => {
-        router.navigate("/editor");
+    document.getElementById("new-project")?.addEventListener("click", async () => {
+        try {
+            const projectName = prompt("Enter project name:", `Project-${Date.now()}`);
+            if (!projectName) return;
+
+            // Create project in Firestore — generates a session ID
+            const project = await projectService.createProject(projectName);
+
+            // Store the session ID so editor & AI chat can use it
+            localStorage.setItem("currentSessionId", project.sessionId);
+            localStorage.setItem("currentProjectName", project.projectName);
+
+            // Navigate to editor with session ID in URL
+            router.navigate(`/editor?sessionId=${project.sessionId}`);
+        } catch (error) {
+            console.error("Failed to create project:", error);
+            alert("Failed to create project. Please try again.");
+        }
     });
 
-    document.querySelectorAll(".project-glass-card").forEach((card) => {
-        card.addEventListener("click", () => {
-            router.navigate("/editor");
-        });
-    });
+    // ─── Load real projects from Firestore ──────────────────────────────
+    loadProjects(router);
+}
+
+function formatTimeAgo(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+}
+
+async function loadProjects(router: IRouter): Promise<void> {
+    const grid = document.getElementById("projects-grid");
+    const countEl = document.getElementById("total-projects-count");
+
+    try {
+        const projects = await projectService.getProjects();
+
+        if (countEl) countEl.textContent = String(projects.length);
+
+        if (!grid) return;
+
+        if (projects.length === 0) {
+            grid.innerHTML = `
+                <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;cursor:default;">
+                    <div style="text-align:center;color:#888;">
+                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin:0 auto 12px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <p>No projects yet. Click "New Project" to get started.</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = "";
+
+        for (const project of projects) {
+            const card = document.createElement("div");
+            card.className = "project-glass-card";
+            card.innerHTML = `
+                <div class="project-preview">
+                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </div>
+                <div class="project-info-modern">
+                    <h3>${escapeHtml(project.projectName)}</h3>
+                    <p class="project-time">Updated ${formatTimeAgo(project.lastModified)}</p>
+                    <div class="project-tags">
+                        <span class="tag-modern">${project.fileUrl ? "Saved" : "New"}</span>
+                    </div>
+                </div>
+                <button class="project-delete-btn" data-session-id="${project.sessionId}" title="Delete project" style="position:absolute;top:8px;right:8px;background:rgba(255,60,60,0.15);border:none;color:#ff4444;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">
+                    ✕
+                </button>
+            `;
+            card.style.position = "relative";
+
+            // Click card → open project in editor
+            card.addEventListener("click", (e) => {
+                // Don't navigate if clicking the delete button
+                if ((e.target as HTMLElement).closest(".project-delete-btn")) return;
+
+                localStorage.setItem("currentSessionId", project.sessionId);
+                localStorage.setItem("currentProjectName", project.projectName);
+                router.navigate(`/editor?sessionId=${project.sessionId}`);
+            });
+
+            // Delete button
+            const deleteBtn = card.querySelector(".project-delete-btn");
+            deleteBtn?.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                if (!confirm(`Delete project "${project.projectName}"?`)) return;
+                try {
+                    await projectService.deleteProject(project.sessionId);
+                    card.remove();
+                    // Update count
+                    const remaining = document.querySelectorAll(".project-glass-card").length;
+                    if (countEl) countEl.textContent = String(remaining);
+                } catch (err) {
+                    console.error("Failed to delete project:", err);
+                    alert("Failed to delete project.");
+                }
+            });
+
+            grid.appendChild(card);
+        }
+    } catch (error) {
+        console.error("Failed to load projects:", error);
+        if (grid) {
+            grid.innerHTML = `
+                <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
+                    <p style="color:#ff4444;">Failed to load projects. Please try again.</p>
+                </div>
+            `;
+        }
+    }
+}
+
+function escapeHtml(str: string): string {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
 }

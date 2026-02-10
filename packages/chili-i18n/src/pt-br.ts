@@ -59,6 +59,7 @@ export default {
         "command.doc.new": "Novo Documento",
         "command.doc.open": "Abrir Documento",
         "command.doc.save": "Salvar Documento",
+        "command.doc.saveToCloud": "Salvar na Nuvem",
         "command.doc.saveToFile": "Salvar para Arquivo",
         "command.edit.redo": "Refazer",
         "command.edit.undo": "Desfazer",
