@@ -37,6 +37,9 @@ export interface PubSubEventMap {
     showSelectionControl: (controller: AsyncController) => void;
     showToast: (message: I18nKeys, ...args: any[]) => void;
     statusBarTip: (tip: I18nKeys) => void;
+    toggleBottomPanel: (toggle: boolean) => void;
+    toggleLeftSidebar: (toggle: boolean) => void;
+    toggleRightSidebar: (toggle: boolean) => void;
     viewClosed: (view: IView) => void;
     viewCursor: (cursor: CursorType) => void;
     visibleChanged: (model: INode) => void;

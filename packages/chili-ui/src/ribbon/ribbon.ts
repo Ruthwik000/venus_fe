@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { a, collection, div, label, span, svg } from "chili-controls";
+import { collection, div, label, span, svg } from "chili-controls";
 import {
     Binding,
     ButtonSize,
@@ -110,12 +110,25 @@ class DisplayConverter implements IConverter<RibbonTabData> {
 export class Ribbon extends HTMLElement {
     private readonly _commandContext = div({ className: style.commandContextPanel });
     private commandContext?: CommandContext;
+    private _ribbonTabsEl: HTMLElement | null = null;
 
     constructor(readonly dataContent: RibbonDataContent) {
         super();
         this.className = style.root;
-        this.append(this.header(), this.ribbonTabs(), this._commandContext);
+        this._ribbonTabsEl = this.ribbonTabs();
+        this.append(this.header(), this._ribbonTabsEl, this._commandContext);
+
+        // Subscribe to toggle event
+        PubSub.default.sub("toggleBottomPanel", this.toggleRibbonControls);
     }
+
+    private readonly toggleRibbonControls = () => {
+        if (this._ribbonTabsEl) {
+            const isVisible = this._ribbonTabsEl.style.display !== "none";
+            this._ribbonTabsEl.style.display = isVisible ? "none" : "";
+            this._commandContext.style.display = isVisible ? "none" : "";
+        }
+    };
 
     private header() {
         return div({ className: style.titleBar }, this.leftPanel(), this.centerPanel(), this.rightPanel());
@@ -124,11 +137,7 @@ export class Ribbon extends HTMLElement {
     private leftPanel() {
         return div(
             { className: style.left },
-            div(
-                { className: style.appIcon, onclick: () => PubSub.default.pub("displayHome", true) },
-                svg({ className: style.icon, icon: "icon-chili" }),
-                span({ id: "appName", textContent: `Chili3D - v${__APP_VERSION__}` }),
-            ),
+            span({ id: "appName", textContent: `Venus - v${__APP_VERSION__}` }),
             div(
                 { className: style.ribbonTitlePanel },
                 svg({
@@ -205,13 +214,38 @@ export class Ribbon extends HTMLElement {
     }
 
     private rightPanel() {
-        return div(
-            { className: style.right },
-            a(
-                { href: "https://github.com/xiangechen/chili3d", target: "_blank" },
-                svg({ title: "Github", className: style.icon, icon: "icon-github" }),
-            ),
+        // Create AI chat toggle instance
+        const aiChatToggle = new (customElements.get("chili-ai-chat-toggle") as any)(this.dataContent.app);
+
+        // Create layout toggle buttons (VS Code style)
+        const layoutToggles = div(
+            { className: style.layoutToggles },
+            div({
+                className: style.layoutButton,
+                title: "Toggle Left Sidebar",
+                textContent: "◧",
+                onclick: () => PubSub.default.pub("toggleLeftSidebar", true),
+            }),
+            div({
+                className: style.layoutButton,
+                title: "Toggle Ribbon Controls",
+                textContent: "⬓",
+                onclick: () => PubSub.default.pub("toggleBottomPanel", true),
+            }),
+            div({
+                className: style.layoutButton,
+                title: "Toggle AI Chat",
+                textContent: "◨",
+                onclick: () => {
+                    const toggleBtn = aiChatToggle.querySelector("button");
+                    if (toggleBtn) {
+                        toggleBtn.click();
+                    }
+                },
+            }),
         );
+
+        return div({ className: style.right }, layoutToggles, aiChatToggle);
     }
 
     private ribbonTabs() {
