@@ -23,13 +23,13 @@ describe("test meshData", () => {
             const mesh = Mesh.createSurface(4, 6);
             expect(mesh.meshType).toBe("surface");
             expect(mesh.position).toBeInstanceOf(Float32Array);
-            expect(mesh.position!.length).toBe(4 * 3);
+            expect(mesh.position?.length).toBe(4 * 3);
             expect(mesh.normal).toBeInstanceOf(Float32Array);
-            expect(mesh.normal!.length).toBe(4 * 3);
+            expect(mesh.normal?.length).toBe(4 * 3);
             expect(mesh.uv).toBeInstanceOf(Float32Array);
-            expect(mesh.uv!.length).toBe(4 * 2);
+            expect(mesh.uv?.length).toBe(4 * 2);
             expect(mesh.index).toBeInstanceOf(Uint32Array);
-            expect(mesh.index!.length).toBe(6);
+            expect(mesh.index?.length).toBe(6);
             expect(mesh.color).toBe(0xfff);
             expect(mesh.groups).toEqual([]);
         });
@@ -38,7 +38,7 @@ describe("test meshData", () => {
             const mesh = Mesh.createLineSegments(8);
             expect(mesh.meshType).toBe("linesegments");
             expect(mesh.position).toBeInstanceOf(Float32Array);
-            expect(mesh.position!.length).toBe(8 * 3);
+            expect(mesh.position?.length).toBe(8 * 3);
             expect(mesh.normal).toBeUndefined();
             expect(mesh.uv).toBeUndefined();
             expect(mesh.index).toBeUndefined();

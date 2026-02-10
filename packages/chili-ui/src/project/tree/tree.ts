@@ -83,7 +83,7 @@ export class Tree extends HTMLElement {
     }
 
     private readonly handleSelectionChanged = (
-        document: IDocument,
+        _document: IDocument,
         selected: INode[],
         unselected: INode[],
     ) => {

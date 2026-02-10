@@ -142,7 +142,7 @@ export class Component {
                 }
                 if (mesh.edges) size.edge += mesh.edges.position.length / 3;
             } else if (node instanceof MeshNode) {
-                size.meshPosition += node.mesh.position!.length / 3;
+                size.meshPosition += node.mesh.position?.length / 3;
                 if (node.mesh.meshType === "surface") {
                     size.meshIndex += node.mesh.index?.length ?? 0;
                 }
@@ -199,7 +199,7 @@ export class Component {
         const map = new Map<number, number>(
             node.faceMaterialPair.map((pair) => [pair.faceIndex, pair.materialIndex]),
         );
-        node.mesh.faces?.range.forEach((range, i) => {
+        node.mesh.faces?.range.forEach((_range, i) => {
             if (!map.has(i)) {
                 faceMaterialPair.push([i + visual.face.range.length, materialIndexMap.get(0)!]);
             }
@@ -216,7 +216,7 @@ export class Component {
         if (node.mesh.meshType === "surface") {
             const materialONMap = this.mapOldNewMaterialIndex(node.materialId, visual.surfaceMaterials);
             MeshUtils.setSurfaceMeshData(visual.surface, node.mesh, transform, offset, materialONMap);
-            offset.meshPosition += node.mesh.position!.length / 3;
+            offset.meshPosition += node.mesh.position?.length / 3;
             if (node.mesh.index?.length) {
                 offset.meshIndex += node.mesh.index.length;
             }
@@ -225,7 +225,7 @@ export class Component {
                 transform.ofPoints(node.mesh.position!),
                 offset.lineSegment * 3,
             );
-            offset.lineSegment += node.mesh.position!.length / 3;
+            offset.lineSegment += node.mesh.position?.length / 3;
         }
     }
 

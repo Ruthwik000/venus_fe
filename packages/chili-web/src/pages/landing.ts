@@ -3,7 +3,7 @@
 
 import type { IApplication, IRouter } from "chili-core";
 
-export function renderLanding(app: IApplication, router: IRouter): void {
+export function renderLanding(_app: IApplication, router: IRouter): void {
     const container = document.getElementById("app") || document.body;
     container.innerHTML = "";
     container.className = "";

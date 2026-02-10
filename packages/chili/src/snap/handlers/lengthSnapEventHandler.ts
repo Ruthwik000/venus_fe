@@ -99,8 +99,8 @@ export class SnapLengthAtPlaneHandler extends SnapEventHandler<SnapLengthAtPlane
     }
 
     private calculatePointFromDistance(distance: number): XYZ {
-        const vector = this._snaped?.point!.sub(this.data.point()).normalize();
-        return this.data.point().add(vector!.multiply(distance));
+        const vector = this._snaped?.point?.sub(this.data.point()).normalize();
+        return this.data.point().add(vector?.multiply(distance));
     }
 
     private calculatePointFromCoordinates(coords: number[], plane: Plane): XYZ {

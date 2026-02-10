@@ -131,7 +131,7 @@ describe("I18n", () => {
             const element = document.createElement("div");
             I18n.set(element, "textContent", "common.cancel");
             expect(element.textContent).toBe("Cancel");
-            expect(element.dataset["chili18n"]).toBe("common.cancel_:_textContent");
+            expect(element.dataset.chili18n).toBe("common.cancel_:_textContent");
         });
 
         test("should set title on element", () => {
@@ -141,7 +141,7 @@ describe("I18n", () => {
             const element = document.createElement("div");
             I18n.set(element, "title", "common.confirm");
             expect(element.title).toBe("Confirm");
-            expect(element.dataset["chili18n"]).toBe("common.confirm_:_title");
+            expect(element.dataset.chili18n).toBe("common.confirm_:_title");
         });
 
         test("should store args in WeakMap", () => {

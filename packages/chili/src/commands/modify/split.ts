@@ -34,7 +34,7 @@ export class Split extends MultistepCommand {
 
     protected override executeMainTask() {
         Transaction.execute(this.document, `excute ${Object.getPrototypeOf(this).data.name}`, () => {
-            const old = this.stepDatas[0].nodes![0];
+            const old = this.stepDatas[0].nodes?.[0];
             const shape = this.splitedShape();
             const subShapes = shape.iterShape();
             if (subShapes.length > 1) {

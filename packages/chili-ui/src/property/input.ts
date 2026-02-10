@@ -34,11 +34,11 @@ class ArrayValueConverter implements IConverter {
         readonly converter?: IConverter,
     ) {}
 
-    convert(value: any): Result<string> {
+    convert(_value: any): Result<string> {
         return Result.ok(this.getDefaultValue());
     }
 
-    convertBack?(value: string): Result<any> {
+    convertBack?(_value: string): Result<any> {
         throw new Error("Method not implemented.");
     }
 

@@ -81,7 +81,7 @@ class OutlinePass extends Pass {
         const copyShader = CopyShader;
 
         this.copyUniforms = UniformsUtils.clone(copyShader.uniforms);
-        this.copyUniforms["opacity"].value = 1.0;
+        this.copyUniforms.opacity.value = 1.0;
 
         this.materialCopy = new ShaderMaterial({
             uniforms: this.copyUniforms,
@@ -108,7 +108,7 @@ class OutlinePass extends Pass {
         function replaceDepthToViewZ(string, camera) {
             var type = camera.isPerspectiveCamera ? "perspective" : "orthographic";
 
-            return string.replace(/DEPTH_TO_VIEW_Z/g, type + "DepthToViewZ");
+            return string.replace(/DEPTH_TO_VIEW_Z/g, `${type}DepthToViewZ`);
         }
     }
 
@@ -148,7 +148,7 @@ class OutlinePass extends Pass {
         this.textureMatrix.multiply(this.renderCamera.matrixWorldInverse);
     }
 
-    render(renderer, writeBuffer, readBuffer, deltaTime, maskActive) {
+    render(renderer, _writeBuffer, readBuffer, _deltaTime, maskActive) {
         if (this.renderScene.children.length > 0) {
             renderer.getClearColor(this._oldClearColor);
             this.oldClearAlpha = renderer.getClearAlpha();
@@ -164,12 +164,12 @@ class OutlinePass extends Pass {
             this.updateTextureMatrix();
 
             this.renderScene.overrideMaterial = this.prepareMaskMaterial;
-            this.prepareMaskMaterial.uniforms["cameraNearFar"].value.set(
+            this.prepareMaskMaterial.uniforms.cameraNearFar.value.set(
                 this.renderCamera.near,
                 this.renderCamera.far,
             );
-            this.prepareMaskMaterial.uniforms["depthTexture"].value = this.renderTargetDepthBuffer.texture;
-            this.prepareMaskMaterial.uniforms["textureMatrix"].value = this.textureMatrix;
+            this.prepareMaskMaterial.uniforms.depthTexture.value = this.renderTargetDepthBuffer.texture;
+            this.prepareMaskMaterial.uniforms.textureMatrix.value = this.textureMatrix;
             renderer.setRenderTarget(this.renderTargetMaskBuffer);
             renderer.clear();
             renderer.render(this.renderScene, this.renderCamera);
@@ -180,22 +180,22 @@ class OutlinePass extends Pass {
 
             // 3. Apply Edge Detection Pass
             this.fsQuad.material = this.edgeDetectionMaterial;
-            this.edgeDetectionMaterial.uniforms["maskTexture"].value = this.renderTargetMaskBuffer.texture;
-            this.edgeDetectionMaterial.uniforms["texSize"].value.set(
+            this.edgeDetectionMaterial.uniforms.maskTexture.value = this.renderTargetMaskBuffer.texture;
+            this.edgeDetectionMaterial.uniforms.texSize.value.set(
                 this.renderTargetMaskBuffer.width,
                 this.renderTargetMaskBuffer.height,
             );
-            this.edgeDetectionMaterial.uniforms["visibleEdgeColor"].value = this.tempPulseColor1;
-            this.edgeDetectionMaterial.uniforms["hiddenEdgeColor"].value = this.tempPulseColor2;
+            this.edgeDetectionMaterial.uniforms.visibleEdgeColor.value = this.tempPulseColor1;
+            this.edgeDetectionMaterial.uniforms.hiddenEdgeColor.value = this.tempPulseColor2;
             renderer.setRenderTarget(this.renderTargetEdgeBuffer1);
             renderer.clear();
             this.fsQuad.render(renderer);
 
             // Blend it additively over the input texture
             this.fsQuad.material = this.overlayMaterial;
-            this.overlayMaterial.uniforms["maskTexture"].value = this.renderTargetMaskBuffer.texture;
-            this.overlayMaterial.uniforms["edgeTexture1"].value = this.renderTargetEdgeBuffer1.texture;
-            this.overlayMaterial.uniforms["edgeStrength"].value = this.edgeStrength;
+            this.overlayMaterial.uniforms.maskTexture.value = this.renderTargetMaskBuffer.texture;
+            this.overlayMaterial.uniforms.edgeTexture1.value = this.renderTargetEdgeBuffer1.texture;
+            this.overlayMaterial.uniforms.edgeStrength.value = this.edgeStrength;
 
             if (maskActive) renderer.state.buffers.stencil.setTest(true);
 
@@ -208,7 +208,7 @@ class OutlinePass extends Pass {
 
         if (this.renderToScreen) {
             this.fsQuad.material = this.materialCopy;
-            this.copyUniforms["tDiffuse"].value = readBuffer.texture;
+            this.copyUniforms.tDiffuse.value = readBuffer.texture;
             renderer.setRenderTarget(null);
             this.fsQuad.render(renderer);
         }
@@ -254,7 +254,7 @@ class OutlinePass extends Pass {
         });
 
         let idCounter = 0;
-        result.onBeforeRender = (renderer, scene, camera, geometry, object, group) => {
+        result.onBeforeRender = (_renderer, _scene, _camera, _geometry, _object, _group) => {
             result.uniforms.id.value = idCounter;
             result.uniformsNeedUpdate = true;
             idCounter += 100;

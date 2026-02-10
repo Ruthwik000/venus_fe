@@ -9,7 +9,6 @@ import {
     type IShape,
     MultiShapeNode,
     ShapeNode,
-    ShapeType,
     ShapeTypeUtils,
     Transaction,
 } from "chili-core";
