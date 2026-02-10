@@ -70,3 +70,4 @@ export const authService: AuthService = {
 };
 
 export { analytics, auth };
+export type { User };

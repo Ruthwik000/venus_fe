@@ -2,7 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import { AppBuilder } from "chili-builder";
-import { authService, type IApplication, Logger } from "chili-core";
+import { authService, type IApplication, Logger, type User } from "chili-core";
 import { Loading } from "./loading";
 import "./output.css";
 import { setupRoutes } from "./routes";
@@ -34,7 +34,7 @@ async function handleApplicaionBuilt(app: IApplication) {
     const router = setupRoutes(app);
 
     // Setup Firebase auth state listener
-    authService.onAuthChange((user) => {
+    authService.onAuthChange((user: User | null) => {
         if (user) {
             // User is signed in
             localStorage.setItem("isAuthenticated", "true");
