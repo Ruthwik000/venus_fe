@@ -120,7 +120,7 @@ export function renderTestEmail(_app: IApplication, router: IRouter): void {
                 `Error code: ${error instanceof Error && "code" in error ? (error as { code?: string }).code || "N/A" : "N/A"}`,
                 "error",
             );
-            alert(`Failed to send email: ${error.message}`);
+            alert(`Failed to send email: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             if (btn) {
                 btn.disabled = false;
