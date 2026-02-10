@@ -1,8 +1,8 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { button, div, input, label } from "chili-controls";
-import { type IApplication, Logger, PubSub, I18n } from "chili-core";
+import { button, div, input } from "chili-controls";
+import { type IApplication, Logger } from "chili-core";
 import style from "./aiChat.module.css";
 
 interface Message {
@@ -74,7 +74,7 @@ export class AIChatPanel extends HTMLElement {
 
         this.connectionStatus = document.createElement("span");
         this.connectionStatus.className = style.connectionStatus;
-        
+
         this.intentBadge = document.createElement("span");
         this.intentBadge.className = style.intentBadge;
         this.intentBadge.style.display = "none";
@@ -85,9 +85,9 @@ export class AIChatPanel extends HTMLElement {
     }
 
     private generateUUID(): string {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0;
+            const v = c === "x" ? r : (r & 0x3) | 0x8;
             return v.toString(16);
         });
     }
@@ -117,7 +117,8 @@ export class AIChatPanel extends HTMLElement {
                 Logger.error("WebSocket error:", error);
                 this.addMessage({
                     role: "assistant",
-                    content: "❌ Connection error. Make sure the backend server is running on http://localhost:8000",
+                    content:
+                        "❌ Connection error. Make sure the backend server is running on http://localhost:8000",
                 });
             };
 
@@ -156,32 +157,32 @@ export class AIChatPanel extends HTMLElement {
         Logger.info("Received WebSocket message:", data);
 
         switch (data.type) {
-            case 'intent_detected':
+            case "intent_detected":
                 this.handleIntentDetection(data);
                 break;
 
-            case 'typing':
+            case "typing":
                 this.showTypingIndicator();
                 break;
 
-            case 'tool_executing':
+            case "tool_executing":
                 this.showToolExecution(data);
                 break;
 
-            case 'response_chunk':
+            case "response_chunk":
                 this.appendTextChunk(data);
                 break;
 
-            case 'questions':
+            case "questions":
                 this.showClarifyingQuestions(data);
                 break;
 
-            case 'complete':
+            case "complete":
                 console.log("🎉 COMPLETE MESSAGE RECEIVED");
                 this.handleComplete(data);
                 break;
 
-            case 'error':
+            case "error":
                 this.showError(data);
                 break;
 
@@ -195,9 +196,9 @@ export class AIChatPanel extends HTMLElement {
         this.currentIntent = data.intent;
         const confidence = Math.round((data.confidence || 0) * 100);
         Logger.info(`Intent detected: ${data.intent} (${confidence}% confident)`);
-        
+
         // Update intent badge
-        this.intentBadge.textContent = data.intent.replace('_', ' ').toUpperCase();
+        this.intentBadge.textContent = data.intent.replace("_", " ").toUpperCase();
         this.intentBadge.style.display = "inline-block";
     }
 
@@ -206,24 +207,24 @@ export class AIChatPanel extends HTMLElement {
         this.removeTypingIndicator();
 
         const typingDiv = div({ className: style.typingIndicator });
-        typingDiv.innerHTML = '<span>●</span><span>●</span><span>●</span>';
+        typingDiv.innerHTML = "<span>●</span><span>●</span><span>●</span>";
         this.messagesContainer.appendChild(typingDiv);
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
 
     private removeTypingIndicator() {
         const typingIndicators = this.messagesContainer.querySelectorAll(`.${style.typingIndicator}`);
-        typingIndicators.forEach(indicator => indicator.remove());
+        typingIndicators.forEach((indicator) => indicator.remove());
     }
 
     private showToolExecution(data: any) {
         this.removeTypingIndicator();
-        
+
         const toolMessage: Message = {
             role: "tool",
             content: data.data.description || `Running ${data.data.tool}...`,
         };
-        
+
         const messageEl = this.createMessageElement(toolMessage);
         this.messagesContainer.appendChild(messageEl);
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
@@ -276,7 +277,7 @@ export class AIChatPanel extends HTMLElement {
     private async handleComplete(data: any) {
         console.log("🎯 handleComplete called");
         console.log("Complete data structure:", JSON.stringify(data, null, 2));
-        
+
         this.removeTypingIndicator();
         this.finalizeCurrentMessage();
 
@@ -288,11 +289,11 @@ export class AIChatPanel extends HTMLElement {
 
         // Try multiple possible paths for download URL
         let downloadUrl = null;
-        
+
         console.log("Checking data.data:", data.data);
         console.log("Checking data.data?.download_url:", data.data?.download_url);
         console.log("Checking data.data?.files:", data.data?.files);
-        
+
         if (data.data && data.data.download_url) {
             downloadUrl = data.data.download_url;
             console.log("✅ Found in data.data.download_url:", downloadUrl);
@@ -323,12 +324,12 @@ export class AIChatPanel extends HTMLElement {
         if (downloadUrl) {
             console.log("🚀 Attempting to download and import from:", downloadUrl);
             Logger.info("Found download URL:", downloadUrl);
-            const fullUrl = downloadUrl.startsWith('http') 
-                ? downloadUrl 
+            const fullUrl = downloadUrl.startsWith("http")
+                ? downloadUrl
                 : `http://localhost:8000${downloadUrl}`;
             console.log("Full URL:", fullUrl);
             Logger.info("Full URL:", fullUrl);
-            
+
             try {
                 await this.downloadAndImportFromUrl(fullUrl);
                 console.log("✅ Download and import completed successfully");
@@ -385,18 +386,13 @@ export class AIChatPanel extends HTMLElement {
             }),
         );
 
-        const inputContainer = div({ className: style.chatInput }, this.inputField, this.sendButton);
         const sessionContainer = div(
             { className: style.sessionContainer },
             this.sessionIdInput,
             this.saveSessionButton,
         );
 
-        const inputContainer = div(
-            { className: style.chatInput },
-            this.inputField,
-            this.sendButton,
-        );
+        const inputContainer = div({ className: style.chatInput }, this.inputField, this.sendButton);
 
         this.append(header, sessionContainer, this.messagesContainer, inputContainer);
     }
@@ -468,7 +464,7 @@ export class AIChatPanel extends HTMLElement {
 
         const data = {
             message: message,
-            type: "user_message"
+            type: "user_message",
         };
 
         try {
@@ -505,63 +501,70 @@ export class AIChatPanel extends HTMLElement {
                 "Cannot connect to the API server. Make sure the backend is running on http://127.0.0.1:8000",
             );
         }
+    }
+
     private showQuestionForm(questions: Question[]) {
         const formContainer = div({ className: style.questionFormContainer });
-        
-        const title = div({ 
-            className: style.questionFormTitle, 
-            textContent: "Please answer the following questions:" 
+
+        const title = div({
+            className: style.questionFormTitle,
+            textContent: "Please answer the following questions:",
         });
         formContainer.appendChild(title);
 
-        const answersMap = new Map<number, HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | string>();
+        const answersMap = new Map<
+            number,
+            HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | string
+        >();
 
         questions.forEach((q, index) => {
             const questionBlock = div({ className: style.questionBlock });
-            
-            const questionLabel = div({ 
-                className: style.questionLabel, 
-                textContent: `${index + 1}. ${q.question}` 
+
+            const questionLabel = div({
+                className: style.questionLabel,
+                textContent: `${index + 1}. ${q.question}`,
             });
             questionBlock.appendChild(questionLabel);
 
             if (q.options && q.options.length > 0) {
                 // Create selectable buttons for options
                 const optionsContainer = div({ className: style.questionButtons });
-                
+
                 q.options.forEach((option, optionIndex) => {
-                    const optionValue = typeof option === 'object' && option !== null ? (option as any).value : option;
-                    const optionLabel = typeof option === 'object' && option !== null ? (option as any).label : option;
-                    
+                    const optionValue =
+                        typeof option === "object" && option !== null ? (option as any).value : option;
+                    const optionLabel =
+                        typeof option === "object" && option !== null ? (option as any).label : option;
+
                     const optionButton = button({
                         className: style.optionButton,
                         textContent: optionLabel,
                         onclick: (e: Event) => {
                             // Just select this option, don't submit yet
                             const btn = e.target as HTMLButtonElement;
-                            
+
                             // Deselect all buttons in this question
-                            optionsContainer.querySelectorAll('button').forEach(b => {
+                            optionsContainer.querySelectorAll("button").forEach((b) => {
                                 b.classList.remove(style.optionButtonSelected);
                             });
-                            
+
                             // Select this button
                             btn.classList.add(style.optionButtonSelected);
-                            
+
                             // Store the answer
                             answersMap.set(index, optionLabel);
                         },
                     }) as HTMLButtonElement;
-                    
+
                     // Select first option by default
                     if (optionIndex === 0) {
                         optionButton.classList.add(style.optionButtonSelected);
                         answersMap.set(index, optionLabel);
                     }
-                    
+
                     optionsContainer.appendChild(optionButton);
                 });
-                
+
                 questionBlock.appendChild(optionsContainer);
             } else {
                 // Free text input for questions without options
@@ -585,7 +588,7 @@ export class AIChatPanel extends HTMLElement {
                 const answers: string[] = [];
                 questions.forEach((q, index) => {
                     const value = answersMap.get(index);
-                    if (typeof value === 'string') {
+                    if (typeof value === "string") {
                         answers.push(value);
                     } else if (value) {
                         answers.push(value.value);
@@ -622,7 +625,7 @@ export class AIChatPanel extends HTMLElement {
         try {
             console.log("📥 downloadAndImportFromUrl called with:", fileUrl);
             Logger.info("Starting download from URL:", fileUrl);
-            
+
             this.addMessage({
                 role: "assistant",
                 content: "Downloading model file...",
@@ -651,12 +654,12 @@ export class AIChatPanel extends HTMLElement {
             console.log("Converting to blob...");
             const blob = await response.blob();
             console.log("Blob size:", blob.size, "bytes");
-            
+
             // Determine file type and name from URL
-            const fileExtension = fileUrl.split('.').pop()?.toLowerCase() || 'step';
+            const fileExtension = fileUrl.split(".").pop()?.toLowerCase() || "step";
             const fileName = `generated_model.${fileExtension}`;
-            const mimeType = fileExtension === 'stl' ? 'model/stl' : 'application/step';
-            
+            const mimeType = fileExtension === "stl" ? "model/stl" : "application/step";
+
             console.log("Creating File object:", fileName, mimeType);
             const file = new File([blob], fileName, { type: mimeType });
 
@@ -670,7 +673,7 @@ export class AIChatPanel extends HTMLElement {
             // Import the file into the application
             const document = this.app.activeView?.document ?? (await this.app.newDocument("Untitled"));
             console.log("Document ready, importing file...");
-            
+
             await this.app.dataExchange.import(document, [file]);
             console.log("✅ Import successful!");
 
