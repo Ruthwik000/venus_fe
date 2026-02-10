@@ -51,7 +51,7 @@ describe("ModelManager", () => {
         });
 
         test("should initialize with empty node changed observers", () => {
-            expect(modelManager._nodeChangedObservers.size).toBe(0);
+            expect(modelManager["_nodeChangedObservers"].size).toBe(0);
         });
     });
 
@@ -119,10 +119,10 @@ describe("ModelManager", () => {
         test("should add and remove node observer", () => {
             const observer: OnNodeChanged = () => {};
             modelManager.addNodeObserver(observer);
-            expect(modelManager._nodeChangedObservers.has(observer)).toBe(true);
+            expect(modelManager["_nodeChangedObservers"].has(observer)).toBe(true);
 
             modelManager.removeNodeObserver(observer);
-            expect(modelManager._nodeChangedObservers.has(observer)).toBe(false);
+            expect(modelManager["_nodeChangedObservers"].has(observer)).toBe(false);
         });
 
         test("should notify node observer when notifyNodeChanged is called", () => {
@@ -194,7 +194,7 @@ describe("ModelManager", () => {
 
     describe("findNode", () => {
         test("should return undefined when rootNode is not initialized", () => {
-            modelManager._rootNode = undefined;
+            modelManager["_rootNode"] = undefined;
             const result = modelManager.findNode(() => true);
             expect(result).toBeUndefined();
         });
@@ -232,7 +232,7 @@ describe("ModelManager", () => {
 
     describe("findNodes", () => {
         test("should return empty array when rootNode is not initialized", () => {
-            modelManager._rootNode = undefined;
+            modelManager["_rootNode"] = undefined;
             const result = modelManager.findNodes();
             expect(result).toEqual([]);
         });
@@ -314,7 +314,7 @@ describe("ModelManager", () => {
             const observer: OnNodeChanged = () => {};
             modelManager.addNodeObserver(observer);
             modelManager.dispose();
-            expect(modelManager._nodeChangedObservers.size).toBe(0);
+            expect(modelManager["_nodeChangedObservers"].size).toBe(0);
         });
 
         test("should remove material collection changed handler", () => {
@@ -326,7 +326,7 @@ describe("ModelManager", () => {
 
         test("should set rootNode to undefined", () => {
             modelManager.dispose();
-            expect(modelManager._rootNode).toBeUndefined();
+            expect(modelManager["_rootNode"]).toBeUndefined();
         });
 
         test("should set currentNode to undefined", () => {

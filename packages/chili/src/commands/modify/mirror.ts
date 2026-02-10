@@ -42,8 +42,8 @@ export class Mirror extends TransformedCommand {
         const p1 = this.meshPoint(this.stepDatas[0].point!);
         if (!point) return [p1];
         const shape = this.transformPreview(point);
-        const offset = point.sub(this.stepDatas[0].point!).normalize()?.multiply(1e6);
-        const line = this.getTempLineData(this.stepDatas[0].point?.sub(offset), point.add(offset));
+        const offset = point.sub(this.stepDatas[0].point!).normalize()!.multiply(1e6);
+        const line = this.getTempLineData(this.stepDatas[0].point!.sub(offset), point.add(offset));
         return [p1, shape, line];
     };
 }

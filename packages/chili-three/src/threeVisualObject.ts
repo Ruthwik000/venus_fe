@@ -28,6 +28,7 @@ import {
     type Points,
 } from "three";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
+import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
@@ -142,8 +143,8 @@ export class ThreeMeshObject extends ThreeVisualObject implements IHighlightable
     }
 
     getSubShapeAndIndex(
-        _shapeType: "face" | "edge",
-        _subVisualIndex: number,
+        shapeType: "face" | "edge",
+        subVisualIndex: number,
     ): {
         shape: IShape | undefined;
         subShape: ISubShape | undefined;
@@ -158,7 +159,7 @@ export class ThreeMeshObject extends ThreeVisualObject implements IHighlightable
         };
     }
 
-    override subShapeVisual(_shapeType: ShapeType): (Mesh | LineSegments2)[] {
+    override subShapeVisual(shapeType: ShapeType): (Mesh | LineSegments2)[] {
         return [];
     }
 
@@ -208,6 +209,20 @@ export class ThreeMeshObject extends ThreeVisualObject implements IHighlightable
         buff.setPositions(this.meshNode.mesh.position!);
         buff.computeBoundingBox();
         const line = new LineSegments2(buff, material);
+        line.layers.set(Constants.Layers.Wireframe);
+        return line;
+    }
+
+    private newLine() {
+        const material = new LineMaterial({
+            linewidth: 1,
+            color: this.meshNode.mesh.color as number,
+            side: DoubleSide,
+        });
+        const geometry = new LineGeometry();
+        geometry.setPositions(this.meshNode.mesh.position!);
+        geometry.computeBoundingBox();
+        const line = new Line2(geometry, material);
         line.layers.set(Constants.Layers.Wireframe);
         return line;
     }

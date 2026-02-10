@@ -46,10 +46,10 @@ export class BezierCommand extends CreateCommand {
     }
 
     private isClose(data: SnapResult) {
-        console.log(this.stepDatas[0].point?.distanceTo(data.point!));
+        console.log(this.stepDatas[0].point!.distanceTo(data.point!));
         return (
             this.stepDatas.length > 1 &&
-            this.stepDatas[0].point?.distanceTo(data.point!) <= Precision.Distance
+            this.stepDatas[0].point!.distanceTo(data.point!) <= Precision.Distance
         );
     }
 
@@ -61,13 +61,13 @@ export class BezierCommand extends CreateCommand {
 
     private readonly getNextData = (): PointSnapData => {
         return {
-            refPoint: () => this.stepDatas.at(-1)?.point!,
+            refPoint: () => this.stepDatas.at(-1)!.point!,
             dimension: Dimension.D1D2D3,
             validator: this.validator,
             preview: this.preview,
             featurePoints: [
                 {
-                    point: this.stepDatas.at(0)?.point!,
+                    point: this.stepDatas.at(0)!.point!,
                     prompt: I18n.translate("prompt.polygon.close"),
                     when: () => this.stepDatas.length > 2,
                 },

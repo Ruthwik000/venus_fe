@@ -168,13 +168,13 @@ export class ThreeViewHandler implements IEventHandler {
         }
     }
 
-    pointerOut(_view: IView, event: PointerEvent): void {
+    pointerOut(view: IView, event: PointerEvent): void {
         this._lastDown = undefined;
         this.lastPointerEventMap.delete(event.pointerId);
         this.currentPointerEventMap.delete(event.pointerId);
     }
 
-    pointerUp(_view: IView, event: PointerEvent): void {
+    pointerUp(view: IView, event: PointerEvent): void {
         if (event.buttons === MOUSE_MIDDLE && this._lastDown) {
             this._clearDownId = window.setTimeout(() => {
                 this._lastDown = undefined;
@@ -186,5 +186,5 @@ export class ThreeViewHandler implements IEventHandler {
         this.currentPointerEventMap.delete(event.pointerId);
     }
 
-    keyDown(_view: IView, _event: KeyboardEvent): void {}
+    keyDown(view: IView, event: KeyboardEvent): void {}
 }

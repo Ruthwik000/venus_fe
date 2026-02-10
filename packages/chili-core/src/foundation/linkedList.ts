@@ -101,12 +101,12 @@ export class LinkedList<T> {
         if (index <= this._size / 2) {
             current = this._head;
             for (let i = 0; i < index; i++) {
-                current = current?.next;
+                current = current!.next;
             }
         } else {
             current = this._tail;
             for (let i = this._size - 1; i > index; i--) {
-                current = current?.prev;
+                current = current!.prev;
             }
         }
         return current;

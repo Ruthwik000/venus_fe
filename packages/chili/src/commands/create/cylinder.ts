@@ -48,7 +48,7 @@ export class Cylinder extends CreateCommand {
     private readonly getHeightStepData = (): LengthAtAxisSnapData => {
         return {
             point: this.stepDatas[0].point!,
-            direction: this.stepDatas[1].plane?.normal,
+            direction: this.stepDatas[1].plane!.normal,
             preview: this.previewCylinder,
             validator: (p: XYZ) => {
                 return Math.abs(this.getHeight(this.stepDatas[1].plane!, p)) > 0.001;

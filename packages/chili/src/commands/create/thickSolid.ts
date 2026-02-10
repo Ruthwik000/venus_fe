@@ -37,7 +37,7 @@ export class ThickSolidCommand extends MultistepCommand {
 
                 const node = x.owner.node;
                 model.transform = node.transform;
-                node.parent?.insertAfter(node, model);
+                node.parent!.insertAfter(node, model);
             });
             this.document.visual.update();
             PubSub.default.pub("showToast", "toast.success");

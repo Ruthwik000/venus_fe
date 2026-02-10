@@ -140,11 +140,11 @@ export class PickTrimEdgeEventHandler extends ShapeSelectionHandler {
         }
     }
 
-    protected override clearSelected(_document: IDocument): void {
+    protected override clearSelected(document: IDocument): void {
         this.#selected = undefined;
     }
 
-    protected override select(_view: IView, _event: PointerEvent): number {
+    protected override select(view: IView, event: PointerEvent): number {
         this.#selected = this.highlight;
         return this.#selected ? 1 : 0;
     }

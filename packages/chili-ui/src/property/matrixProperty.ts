@@ -90,7 +90,7 @@ export abstract class MatrixConverter implements IConverter<Matrix4, string> {
         const values = value
             .split(",")
             .map(Number)
-            .filter((x) => !Number.isNaN(x));
+            .filter((x) => !isNaN(x));
         if (values.length !== 3) return Result.err("invalid number of values");
         const newValue = {
             x: values[0],

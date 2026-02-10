@@ -18,11 +18,11 @@ class MockShape implements IShape {
     matrix: Matrix4 = Matrix4.identity();
     mesh: IShapeMeshData = { faces: undefined, edges: undefined, vertexs: undefined };
 
-    transformed(_matrix: Matrix4): IShape {
+    transformed(matrix: Matrix4): IShape {
         return this;
     }
 
-    transformedMul(_matrix: Matrix4): IShape {
+    transformedMul(matrix: Matrix4): IShape {
         return this;
     }
 
@@ -59,11 +59,11 @@ class MockShape implements IShape {
         return Orientation.FORWARD;
     }
 
-    findAncestor(_ancestorType: ShapeType, _fromShape: IShape): IShape[] {
+    findAncestor(ancestorType: ShapeType, fromShape: IShape): IShape[] {
         return [];
     }
 
-    findSubShapes(_subshapeType: ShapeType): IShape[] {
+    findSubShapes(subshapeType: ShapeType): IShape[] {
         return [];
     }
 
@@ -71,11 +71,11 @@ class MockShape implements IShape {
         return [this];
     }
 
-    section(_shape: IShape | Plane): IShape {
+    section(shape: IShape | Plane): IShape {
         return this;
     }
 
-    split(_shapes: IShape[]): IShape {
+    split(shapes: IShape[]): IShape {
         return this;
     }
 
@@ -85,7 +85,7 @@ class MockShape implements IShape {
         return new MockShape();
     }
 
-    hlr(_position: XYZLike, _direction: XYZLike, _xDir: XYZLike): IShape {
+    hlr(position: XYZLike, direction: XYZLike, xDir: XYZLike): IShape {
         return this;
     }
 
@@ -155,7 +155,7 @@ describe("FacebaseNode", () => {
                 },
             };
 
-            expect(serialized.properties.isFace).toBe(true);
+            expect(serialized.properties["isFace"]).toBe(true);
         });
 
         test("should handle missing isFace in deserialization", () => {

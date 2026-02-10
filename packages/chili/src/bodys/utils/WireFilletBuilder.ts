@@ -20,7 +20,7 @@ export class WireFilletBuilder {
             return Result.ok(path);
         }
 
-        const _newEdges: IEdge[] = [];
+        const newEdges: IEdge[] = [];
 
         // Iterate through corners logic was simplified in previous steps to just vertex reconstruction
         // But for clarity/completeness of the algorithm used:
@@ -78,7 +78,7 @@ export class WireFilletBuilder {
             }
 
             const Pt1 = V.add(u.multiply(T)); // Point on incoming segment
-            const _Pt2 = V.add(v.multiply(T)); // Point on outgoing segment
+            const Pt2 = V.add(v.multiply(T)); // Point on outgoing segment
 
             // Add line from previous to start of arc
             if (previousPoint.distanceTo(Pt1) > Precision.Distance) {

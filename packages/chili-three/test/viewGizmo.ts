@@ -6,7 +6,7 @@ import type { IViewGizmo } from "chili-core";
 export class ViewGizmo extends HTMLElement implements IViewGizmo {
     update(): void {}
     dispose(): void {}
-    setDom(_dom: HTMLElement) {}
+    setDom(dom: HTMLElement) {}
 }
 
 customElements.define("view-gizmo", ViewGizmo);

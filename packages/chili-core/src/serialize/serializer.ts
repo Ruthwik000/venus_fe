@@ -127,7 +127,7 @@ export class Serializer {
         className: string,
     ) {
         const parameters: SerializedProperties<any> = {};
-        parameters.document = document;
+        parameters["document"] = document;
         for (const key of ctorParamNames) {
             if (key in properties) {
                 parameters[key] = Serializer.deserialValue(document, properties[key]);

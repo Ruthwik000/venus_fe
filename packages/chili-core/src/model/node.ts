@@ -79,8 +79,8 @@ export abstract class Node extends HistoryObservable implements INode {
         try {
             this.document.history.disabled = true;
             const serialized = Serializer.serializeObject(this);
-            serialized.properties.id = Id.generate();
-            serialized.properties.name = `${this.name}_copy`;
+            serialized.properties["id"] = Id.generate();
+            serialized.properties["name"] = `${this.name}_copy`;
             return Serializer.deserializeObject(this.document, serialized) as this;
         } finally {
             this.document.history.disabled = oldValue;
@@ -281,7 +281,7 @@ export class NodeUtils {
 
     private static serializeNodeToArray(nodes: Serialized[], node: INode, parentId: string | undefined) {
         const serialized: any = Serializer.serializeObject(node);
-        if (parentId) serialized.parentId = parentId;
+        if (parentId) serialized["parentId"] = parentId;
         nodes.push(serialized);
 
         if (NodeUtils.isLinkedListNode(node) && node.firstChild) {
@@ -298,16 +298,16 @@ export class NodeUtils {
         nodes.forEach((n) => {
             const node = Serializer.deserializeObject(document, n);
             if (NodeUtils.isLinkedListNode(node)) {
-                nodeMap.set(n.properties.id, node);
+                nodeMap.set(n.properties["id"], node);
             }
-            const parentId = (n as any).parentId;
+            const parentId = (n as any)["parentId"];
             if (!parentId) return;
             if (nodeMap.has(parentId)) {
-                nodeMap.get(parentId)?.add(node);
+                nodeMap.get(parentId)!.add(node);
             } else {
-                console.warn(`parent not found: ${parentId}`);
+                console.warn("parent not found: " + parentId);
             }
         });
-        return Promise.resolve(nodeMap.get(nodes[0].properties.id));
+        return Promise.resolve(nodeMap.get(nodes[0].properties["id"]));
     }
 }

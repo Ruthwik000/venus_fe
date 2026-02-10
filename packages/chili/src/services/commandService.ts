@@ -41,7 +41,7 @@ export class CommandService implements IService {
         Logger.info(`${CommandService.name} registed`);
     }
 
-    private readonly onActiveViewChanged = async (_view: IView | undefined) => {
+    private readonly onActiveViewChanged = async (view: IView | undefined) => {
         if (this.app.executingCommand && isCancelableCommand(this.app.executingCommand))
             await this.app.executingCommand.cancel();
     };

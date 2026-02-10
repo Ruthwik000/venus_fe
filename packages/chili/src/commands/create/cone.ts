@@ -56,7 +56,7 @@ export class Cone extends CreateCommand {
     private readonly getHeightStepData = (): LengthAtAxisSnapData => {
         return {
             point: this.stepDatas[0].point!,
-            direction: this.stepDatas[1].plane?.normal,
+            direction: this.stepDatas[1].plane!.normal,
             preview: this.previewCone,
         };
     };

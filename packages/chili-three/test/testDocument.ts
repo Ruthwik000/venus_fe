@@ -26,17 +26,17 @@ export class TestDocument implements IDocument, ISerialize {
     activeView: IView | undefined;
     modelManager: ModelManager = new ModelManager(this);
     acts: ObservableCollection<Act> = new ObservableCollection<Act>();
-    onPropertyChanged<K extends keyof this>(_handler: PropertyChangedHandler<this, K>): void {
+    onPropertyChanged<K extends keyof this>(handler: PropertyChangedHandler<this, K>): void {
         throw new Error("Method not implemented.");
     }
-    removePropertyChanged<K extends keyof this>(_handler: PropertyChangedHandler<this, K>): void {
+    removePropertyChanged<K extends keyof this>(handler: PropertyChangedHandler<this, K>): void {
         throw new Error("Method not implemented.");
     }
     dispose() {
         throw new Error("Method not implemented.");
     }
 
-    importFiles(_files: File[] | FileList): Promise<void> {
+    importFiles(files: File[] | FileList): Promise<void> {
         return Promise.resolve();
     }
 
