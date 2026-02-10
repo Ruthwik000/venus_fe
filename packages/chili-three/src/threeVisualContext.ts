@@ -293,7 +293,7 @@ export class ThreeVisualContext implements IVisualContext {
 
         if ("geometry" in shape && shape.geometry instanceof BufferGeometry) {
             shape.geometry.setAttribute("position", new BufferAttribute(position, 3));
-            shape.geometry.attributes["position"].needsUpdate = true;
+            shape.geometry.attributes.position.needsUpdate = true;
         }
     }
 

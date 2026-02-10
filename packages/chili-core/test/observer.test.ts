@@ -46,7 +46,7 @@ class TestClassC extends Observable {
 
 test("test observer", () => {
     const t = new TestClassA();
-    t.onPropertyChanged((p, s, o) => {
+    t.onPropertyChanged((p, s, _o) => {
         expect(p).toBe("propA");
         expect(s[p]).toBe(2);
     });
@@ -56,7 +56,7 @@ test("test observer", () => {
 test("deep observer", () => {
     const c = new TestClassC();
     let targetProperty: string | undefined;
-    const onPropertyChanged = (p: string, s: IPropertyChanged, o: any) => {
+    const onPropertyChanged = (p: string, _s: IPropertyChanged, _o: any) => {
         targetProperty = p;
     };
     const a = new TestClassA();

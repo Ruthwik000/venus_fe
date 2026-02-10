@@ -36,7 +36,7 @@ export class IndexedDBStorage implements IStorage {
 
     private open(
         dbName: string,
-        storeName: string,
+        _storeName: string,
         version: number,
         options?: IDBObjectStoreParameters,
     ): Promise<IDBDatabase> {

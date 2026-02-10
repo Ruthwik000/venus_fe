@@ -16,11 +16,6 @@ import { TestDocument } from "./testDocument";
 class TestObject {
     protected k2: string = "k2";
     public k3: string = "k3";
-
-    @serialze()
-    private k1: string;
-    @serialze()
-    private k4: string = "k4";
     @serialze()
     protected k5: string = "k5";
     @serialze()
@@ -42,7 +37,7 @@ test("test Serializer", () => {
     expect("k4" in s.properties).toBeTruthy();
     expect("k5" in s.properties).toBeTruthy();
     expect("k6" in s.properties).toBeTruthy();
-    s.properties["k1"] = "222";
+    s.properties.k1 = "222";
     const obj2 = Serializer.deserializeObject({} as any, s);
     expect(obj2.k1).toBe("222");
 });

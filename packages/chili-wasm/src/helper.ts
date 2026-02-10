@@ -185,7 +185,7 @@ export function getShapeEnum(shapeType: ShapeType): TopAbs_ShapeEnum {
         case ShapeType.Shape:
             return wasm.TopAbs_ShapeEnum.TopAbs_SHAPE;
         default:
-            throw new Error("Unknown shape type: " + shapeType);
+            throw new Error(`Unknown shape type: ${shapeType}`);
     }
 }
 
@@ -225,7 +225,7 @@ export function getJoinType(joinType: JoinType) {
         case JoinType.tangent:
             return wasm.GeomAbs_JoinType.GeomAbs_Tangent;
         default:
-            throw new Error("Unknown join type: " + joinType);
+            throw new Error(`Unknown join type: ${joinType}`);
     }
 }
 

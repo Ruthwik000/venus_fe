@@ -29,7 +29,7 @@ export class AddBrushCommand extends MultistepCommand {
                 if (!nodeMatiralMape.has(x.owner.node)) {
                     nodeMatiralMape.set(x.owner.node, []);
                 }
-                nodeMatiralMape.get(x.owner.node)!.push({
+                nodeMatiralMape.get(x.owner.node)?.push({
                     faceIndex: (x.shape as ISubFaceShape).index,
                     materialId: this.materialId,
                 });
@@ -63,7 +63,7 @@ export class RemoveBrushCommand extends MultistepCommand {
                 if (!nodeMatiralMape.has(x.owner.node)) {
                     nodeMatiralMape.set(x.owner.node, []);
                 }
-                nodeMatiralMape.get(x.owner.node)!.push((x.shape as ISubFaceShape).index);
+                nodeMatiralMape.get(x.owner.node)?.push((x.shape as ISubFaceShape).index);
             }
         });
 

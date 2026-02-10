@@ -29,10 +29,10 @@ export class TestEdge implements IEdge {
         readonly start: XYZ,
         readonly end: XYZ,
     ) {}
-    transformed(matrix: Matrix4): IShape {
+    transformed(_matrix: Matrix4): IShape {
         throw new Error("Method not implemented.");
     }
-    transformedMul(matrix: Matrix4): IShape {
+    transformedMul(_matrix: Matrix4): IShape {
         throw new Error("Method not implemented.");
     }
     edgesMeshPosition(): EdgeMeshData {
@@ -45,10 +45,10 @@ export class TestEdge implements IEdge {
     dispose(): void {
         throw new Error("Method not implemented.");
     }
-    update(curve: ICurve): void {
+    update(_curve: ICurve): void {
         throw new Error("Method not implemented.");
     }
-    trim(start: number, end: number): IEdge {
+    trim(_start: number, _end: number): IEdge {
         throw new Error("Method not implemented.");
     }
     isClosed(): boolean {
@@ -60,34 +60,34 @@ export class TestEdge implements IEdge {
     reserve(): void {
         throw new Error("Method not implemented.");
     }
-    section(shape: IShape | Plane): IShape {
+    section(_shape: IShape | Plane): IShape {
         throw new Error("Method not implemented.");
     }
-    splitByWire(edges: (IEdge | IWire)[]): IShape {
+    splitByWire(_edges: (IEdge | IWire)[]): IShape {
         throw new Error("Method not implemented.");
     }
-    split(shapes: IShape[]): IShape {
-        throw new Error("Method not implemented.");
-    }
-
-    findAncestor(ancestorType: ShapeType, fromShape: IShape): IShape[] {
+    split(_shapes: IShape[]): IShape {
         throw new Error("Method not implemented.");
     }
 
-    findSubShapes(subshapeType: ShapeType): IShape[] {
+    findAncestor(_ancestorType: ShapeType, _fromShape: IShape): IShape[] {
+        throw new Error("Method not implemented.");
+    }
+
+    findSubShapes(_subshapeType: ShapeType): IShape[] {
         throw new Error("Method not implemented.");
     }
     iterShape(): IShape[] {
         throw new Error("Method not implemented.");
     }
-    offset(distance: number, dir: XYZ): Result<IEdge> {
+    offset(_distance: number, _dir: XYZ): Result<IEdge> {
         throw new Error("Method not implemented.");
     }
-    hlr(position: XYZLike, direction: XYZLike, xDir: XYZLike): IShape {
+    hlr(_position: XYZLike, _direction: XYZLike, _xDir: XYZLike): IShape {
         throw new Error("Method not implemented.");
     }
 
-    intersect(other: IEdge | Line) {
+    intersect(_other: IEdge | Line) {
         return [];
     }
     length(): number {
@@ -129,10 +129,10 @@ export class TestEdge implements IEdge {
     orientation(): Orientation {
         return Orientation.FORWARD;
     }
-    isPartner(other: IShape): boolean {
+    isPartner(_other: IShape): boolean {
         return true;
     }
-    isSame(other: IShape): boolean {
+    isSame(_other: IShape): boolean {
         return true;
     }
     isEqual(other: IShape): boolean {
@@ -158,8 +158,8 @@ export class TestNode extends ParameterShapeNode {
     protected override setProperty<K extends keyof this>(
         property: K,
         newValue: this[K],
-        onPropertyChanged?: ((property: K, oldValue: this[K]) => void) | undefined,
-        equals?: IEqualityComparer<this[K]> | undefined,
+        _onPropertyChanged?: ((property: K, oldValue: this[K]) => void) | undefined,
+        _equals?: IEqualityComparer<this[K]> | undefined,
     ): boolean {
         this.setPrivateValue(property, newValue);
         return true;

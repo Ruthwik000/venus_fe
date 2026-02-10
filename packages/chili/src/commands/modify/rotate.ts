@@ -12,7 +12,7 @@ import { TransformedCommand } from "./transformedCommand";
 })
 export class Rotate extends TransformedCommand {
     protected override transfrom(point: XYZ): Matrix4 {
-        const normal = this.stepDatas[1].plane!.normal;
+        const normal = this.stepDatas[1].plane?.normal;
         const center = this.stepDatas[0].point!;
         const angle = this.getAngle(point);
         return Matrix4.fromAxisRad(center, normal, angle);
@@ -71,7 +71,7 @@ export class Rotate extends TransformedCommand {
     };
 
     private getAngle(point: XYZ) {
-        const normal = this.stepDatas[1].plane!.normal;
+        const normal = this.stepDatas[1].plane?.normal;
         const center = this.stepDatas[0].point!;
         const p1 = this.stepDatas[1].point!;
         const v1 = p1.sub(center);
@@ -94,7 +94,7 @@ export class Rotate extends TransformedCommand {
             result.push(
                 this.meshCreatedShape(
                     "arc",
-                    this.stepDatas[1].plane!.normal,
+                    this.stepDatas[1].plane?.normal,
                     this.stepDatas[0].point!,
                     this.stepDatas[1].point!,
                     (angle * 180) / Math.PI,
@@ -106,7 +106,7 @@ export class Rotate extends TransformedCommand {
 
     private getRayData(end: XYZ) {
         const center = this.stepDatas[0].point!;
-        const rayEnd = center.add(end.sub(center).normalize()!.multiply(1e6));
+        const rayEnd = center.add(end.sub(center).normalize()?.multiply(1e6));
         return this.getTempLineData(center, rayEnd);
     }
 }

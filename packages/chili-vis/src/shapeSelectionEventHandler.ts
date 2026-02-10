@@ -134,14 +134,14 @@ export class SubshapeSelectionHandler extends ShapeSelectionHandler {
         return [...this._shapes.values()];
     }
 
-    override clearSelected(document: IDocument): void {
+    override clearSelected(_document: IDocument): void {
         for (const shape of this._shapes.values()) {
             this.removeSelected(shape);
         }
         this._shapes.clear();
     }
 
-    protected override select(view: IView, event: PointerEvent): number {
+    protected override select(view: IView, _event: PointerEvent): number {
         const document = view.document.visual.document;
         if (this.multiMode) {
             this._highlights?.forEach((x) =>
