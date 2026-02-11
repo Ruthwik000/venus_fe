@@ -1,8 +1,8 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { button, div, input, label } from "chili-controls";
-import { authService, I18n, type IApplication, Logger, PubSub } from "chili-core";
+import { button, div, input } from "chili-controls";
+import { authService, type IApplication, Logger } from "chili-core";
 import style from "./aiChat.module.css";
 
 interface Message {
@@ -416,11 +416,6 @@ export class AIChatPanel extends HTMLElement {
             div({ className: style.chatTitle, textContent: "CAD Copilot" }),
             this.intentBadge,
             this.connectionStatus,
-            button({
-                className: style.closeButton,
-                textContent: "×",
-                onclick: () => this.close(),
-            }),
         );
 
         const sessionContainer = div(
@@ -436,7 +431,32 @@ export class AIChatPanel extends HTMLElement {
             this.sendButton,
         );
 
-        this.append(header, sessionContainer, this.messagesContainer, inputContainer);
+        const resizer = div({
+            className: style.chatResizer,
+            onmousedown: (e: MouseEvent) => this.startResize(e),
+        });
+
+        this.append(resizer, header, sessionContainer, this.messagesContainer, inputContainer);
+    }
+
+    private startResize(e: MouseEvent) {
+        e.preventDefault();
+        const startX = e.clientX;
+        const startWidth = this.offsetWidth;
+
+        const onMouseMove = (ev: MouseEvent) => {
+            const diff = startX - ev.clientX;
+            const newWidth = Math.max(300, Math.min(600, startWidth + diff));
+            this.style.width = `${newWidth}px`;
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+        };
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
     }
 
     private handleSaveSession() {

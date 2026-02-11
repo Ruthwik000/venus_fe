@@ -23,6 +23,19 @@
         align-items: center;
         justify-self: center;
 
+        .backButton {
+            width: 36px;
+            height: 36px;
+            padding: 12px;
+            border-radius: 4px;
+            margin-left: 8px;
+            cursor: pointer;
+
+            &:hover {
+                background-color: var(--hover-background-color);
+            }
+        }
+
         #appName {
             margin-left: 16px;
             font-weight: bolder;

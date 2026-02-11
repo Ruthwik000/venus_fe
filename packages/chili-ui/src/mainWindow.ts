@@ -15,13 +15,13 @@ import {
 } from "chili-core";
 import { Dialog } from "./dialog";
 import { Editor } from "./editor";
-import { Home } from "./home";
+// Removed: Home import - we use our own dashboard
 import { Permanent } from "./permanent";
 import { Toast } from "./toast";
 
 export class MainWindow extends HTMLElement implements IWindow {
     private _inited: boolean = false;
-    private _home?: Home;
+    // Removed: _home property - we use our own dashboard
     private _editor?: Editor;
 
     constructor(
@@ -62,7 +62,7 @@ export class MainWindow extends HTMLElement implements IWindow {
         await this.fetchIconFont();
 
         this.applyTheme();
-        await this._initHome(app);
+        // Removed: _initHome - we use our own dashboard instead
         this._initEditor(app);
         this._initEventHandlers(app);
     }
@@ -84,7 +84,8 @@ export class MainWindow extends HTMLElement implements IWindow {
         PubSub.default.sub("displayError", Toast.error);
         PubSub.default.sub("showDialog", Dialog.show);
         PubSub.default.sub("showPermanent", Permanent.show);
-        PubSub.default.sub("activeViewChanged", (view) => displayHome(app, view === undefined));
+        // Disabled: Don't auto-show home when view changes - we use our dashboard
+        // PubSub.default.sub("activeViewChanged", (view) => displayHome(app, view === undefined));
         PubSub.default.sub("displayHome", (show) => displayHome(app, show));
 
         Config.instance.onPropertyChanged(this.handleConfigChanged);
@@ -97,20 +98,13 @@ export class MainWindow extends HTMLElement implements IWindow {
 
     private readonly displayHome = (app: IApplication, displayHome: boolean) => {
         // Disabled: We use our own dashboard instead of Chili's home page
-        if (this._home) {
-            this._home.remove();
-            this._home = undefined;
-        }
-        // Don't show Chili home - redirect to our dashboard instead
+        // Redirect to dashboard if requested
         if (displayHome) {
             window.location.href = "/dashboard";
         }
     };
 
-    private async _initHome(app: IApplication) {
-        this._home = new Home(app);
-        await this._home.render();
-    }
+    // Removed: _initHome method - we use our own dashboard instead
 
     private async _initEditor(app: IApplication) {
         this._editor = new Editor(app, this.tabs);
