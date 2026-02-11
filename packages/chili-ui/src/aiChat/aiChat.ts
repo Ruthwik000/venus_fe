@@ -114,7 +114,7 @@ export class AIChatPanel extends HTMLElement {
     }
 
     private connectWebSocket() {
-        const wsUrl = `ws://localhost:8000/ws/chat/${this.sessionId}`;
+        const wsUrl = `wss://proletarianly-sociopsychological-myla.ngrok-free.dev/ws/chat/${this.sessionId}`;
         Logger.info("Connecting to WebSocket:", wsUrl);
 
         try {
@@ -138,8 +138,7 @@ export class AIChatPanel extends HTMLElement {
                 Logger.error("WebSocket error:", error);
                 this.addMessage({
                     role: "assistant",
-                    content:
-                        "❌ Connection error. Make sure the backend server is running on http://localhost:8000",
+                    content: "",
                 });
             };
 
@@ -551,7 +550,7 @@ export class AIChatPanel extends HTMLElement {
 
         try {
             // Call the generation API
-            response = await fetch("http://127.0.0.1:8000/generate", {
+            response = await fetch("https://proletarianly-sociopsychological-myla.ngrok-free.dev/generate", {
                 method: "POST",
                 mode: "cors",
                 headers: {
