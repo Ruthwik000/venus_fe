@@ -8,4 +8,3 @@ export * from "./saveDocument";
 export * from "./saveProjectToCloud";
 export * from "./toFile";
 export * from "./toggleDynamicWorkplane";
-export * from "./wechatGroup";
