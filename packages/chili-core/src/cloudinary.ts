@@ -9,7 +9,15 @@
 //   VITE_CLOUDINARY_API_SECRET
 //   VITE_CLOUDINARY_UPLOAD_PRESET (optional)
 
-declare const process: { env: Record<string, string | undefined> };
+// Declare process.env for TypeScript
+declare const process: {
+    env: {
+        VITE_CLOUDINARY_CLOUD_NAME?: string;
+        VITE_CLOUDINARY_API_KEY?: string;
+        VITE_CLOUDINARY_API_SECRET?: string;
+        VITE_CLOUDINARY_UPLOAD_PRESET?: string;
+    };
+};
 
 export interface CloudinaryUploadResult {
     secure_url: string;
@@ -64,6 +72,24 @@ export const cloudinaryService: CloudinaryService = {
         fileName: string,
         sessionId: string,
     ): Promise<CloudinaryUploadResult> {
+        // Debug: Log what we're getting from process.env
+        console.log("DEBUG - Checking Cloudinary env vars:");
+        console.log(
+            "  CLOUD_NAME:",
+            typeof process.env.VITE_CLOUDINARY_CLOUD_NAME,
+            process.env.VITE_CLOUDINARY_CLOUD_NAME,
+        );
+        console.log(
+            "  API_KEY:",
+            typeof process.env.VITE_CLOUDINARY_API_KEY,
+            process.env.VITE_CLOUDINARY_API_KEY,
+        );
+        console.log(
+            "  API_SECRET:",
+            typeof process.env.VITE_CLOUDINARY_API_SECRET,
+            process.env.VITE_CLOUDINARY_API_SECRET ? "***" : undefined,
+        );
+
         const cloudName = process.env.VITE_CLOUDINARY_CLOUD_NAME;
         const apiKey = process.env.VITE_CLOUDINARY_API_KEY;
         const apiSecret = process.env.VITE_CLOUDINARY_API_SECRET;

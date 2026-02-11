@@ -129,18 +129,30 @@ export function setupRoutes(app: IApplication): Router {
 
         const container = document.getElementById("app") || document.body;
 
-        // Clear any custom page content
-        container.innerHTML = "";
+        // Remove any custom page content first
+        const customElements = container.querySelectorAll(".modern-dashboard");
+        customElements.forEach((el) => el.remove());
+
+        // Reset container styling
         container.className = "";
         container.style.cssText = "";
 
-        // Restore the original Chili3D UI elements
+        // Restore the original Chili3D UI elements (make them visible)
         const chiliUIElements = (app as unknown as { chiliUIElements?: HTMLElement[] }).chiliUIElements;
         if (chiliUIElements && chiliUIElements.length > 0) {
+            Logger.info(`Restoring ${chiliUIElements.length} Chili UI elements`);
             for (const el of chiliUIElements) {
-                el.style.display = "";
-                container.appendChild(el);
+                el.style.display = "block"; // Force block display
+                el.style.visibility = "visible"; // Ensure visibility
+                el.style.opacity = "1"; // Ensure opacity
+                // Ensure element is in the container
+                if (!container.contains(el)) {
+                    container.appendChild(el);
+                    Logger.info("Appended Chili UI element to container");
+                }
             }
+        } else {
+            Logger.warn("No Chili UI elements found to restore");
         }
 
         // Delegate to renderEditor which handles session ID + cloud loading

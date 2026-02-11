@@ -3,15 +3,14 @@
 
 import { command, type IApplication, type ICommand } from "chili-core";
 
-let count = 1;
-
 @command({
     key: "doc.new",
     icon: "icon-new",
     isApplicationCommand: true,
 })
 export class NewDocument implements ICommand {
-    async execute(app: IApplication): Promise<void> {
-        await app.newDocument(`undefined ${count++}`);
+    async execute(_app: IApplication): Promise<void> {
+        // Navigate to dashboard instead of creating a new document
+        window.location.href = "/dashboard";
     }
 }

@@ -96,12 +96,14 @@ export class MainWindow extends HTMLElement implements IWindow {
     }
 
     private readonly displayHome = (app: IApplication, displayHome: boolean) => {
+        // Disabled: We use our own dashboard instead of Chili's home page
         if (this._home) {
             this._home.remove();
             this._home = undefined;
         }
+        // Don't show Chili home - redirect to our dashboard instead
         if (displayHome) {
-            this._initHome(app);
+            window.location.href = "/dashboard";
         }
     };
 
