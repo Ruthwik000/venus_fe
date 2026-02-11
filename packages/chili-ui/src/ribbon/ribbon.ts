@@ -20,6 +20,7 @@ import {
     PubSub,
     Result,
 } from "chili-core";
+import { NotificationCenter } from "../collaboration/notificationCenter";
 import { CommandContext } from "./commandContext";
 import style from "./ribbon.module.css";
 import { RibbonButton } from "./ribbonButton";
@@ -240,7 +241,27 @@ export class Ribbon extends HTMLElement {
             }),
         );
 
-        return div({ className: style.right }, layoutToggles);
+        // Add Share button
+        const shareButton = div({
+            className: style.shareButton,
+            title: "Share Project",
+            textContent: "Share",
+            onclick: () => PubSub.default.pub("openShareDialog", true),
+        });
+
+        // Add Presence Indicators (will be populated by editor)
+        const presenceContainer = div({ id: "presence-indicators", className: style.presenceContainer });
+
+        // Add Notification Center
+        const notificationCenter = new NotificationCenter();
+
+        return div(
+            { className: style.right },
+            shareButton,
+            presenceContainer,
+            layoutToggles,
+            notificationCenter,
+        );
     }
 
     private ribbonTabs() {

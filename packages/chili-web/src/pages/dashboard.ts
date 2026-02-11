@@ -1,7 +1,8 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { authService, type IApplication, type IRouter, type ProjectData, projectService } from "chili-core";
+import { auth, authService, db, type IApplication, type IRouter, projectService } from "chili-core";
+import { doc, updateDoc } from "firebase/firestore";
 
 export function renderDashboard(_app: IApplication, router: IRouter): void {
     const container = document.getElementById("app") || document.body;
@@ -27,30 +28,23 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
             </div>
             
             <nav class="sidebar-menu">
-                <a href="#" class="menu-item active">
+                <a href="#" class="menu-item active" data-tab="overview">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                     <span>Overview</span>
                 </a>
-                <a href="#" class="menu-item">
+                <a href="#" class="menu-item" data-tab="projects">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                     <span>Projects</span>
                 </a>
-                <a href="#" class="menu-item">
+                <a href="#" class="menu-item" data-tab="teams">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    <span>Team</span>
-                </a>
-                <a href="#" class="menu-item">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Settings</span>
+                    <span>Teams</span>
                 </a>
             </nav>
             
@@ -71,10 +65,16 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
                     <p>Here's what's happening with your projects</p>
                 </div>
                 <div class="header-right">
-                    <button class="header-icon-btn">
+                    <button id="friends-btn" class="header-icon-btn" title="Friends">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                    </button>
+                    <button id="notifications-btn" class="header-icon-btn" title="Notifications" style="position:relative;">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
+                        <span id="notification-badge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;border-radius:50%;width:8px;height:8px;"></span>
                     </button>
                     <div class="header-user">
                         <div class="user-avatar">${username.charAt(0).toUpperCase()}</div>
@@ -83,65 +83,321 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
                 </div>
             </header>
 
-            <!-- Stats Grid -->
-            <div class="stats-container">
-                <div class="stat-glass-card">
-                    <div class="stat-header">
-                        <span class="stat-label">Total Projects</span>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
+            <!-- Overview Tab -->
+            <div id="tab-overview" class="tab-content">
+                <!-- Stats Grid -->
+                <div class="stats-container">
+                    <div class="stat-glass-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Total Projects</span>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                        </div>
+                        <div class="stat-value" id="total-projects-count">--</div>
+                        <div class="stat-trend positive" id="projects-trend"></div>
                     </div>
-                    <div class="stat-value" id="total-projects-count">--</div>
-                    <div class="stat-trend positive" id="projects-trend"></div>
+
+                    <div class="stat-glass-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Active Hours</span>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="stat-value">--</div>
+                        <div class="stat-trend neutral">--</div>
+                    </div>
+
+                    <div class="stat-glass-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Teams Involved</span>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                        <div class="stat-value" id="teams-count">--</div>
+                        <div class="stat-trend positive"></div>
+                    </div>
                 </div>
 
-                <div class="stat-glass-card">
-                    <div class="stat-header">
-                        <span class="stat-label">Active Hours</span>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div class="stat-value">--</div>
-                    <div class="stat-trend neutral">--</div>
+                <!-- Recent Projects -->
+                <div class="section-header-modern">
+                    <h2>Recent Projects</h2>
                 </div>
-
-                <div class="stat-glass-card">
-                    <div class="stat-header">
-                        <span class="stat-label">Storage Used</span>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                        </svg>
+                <div class="projects-modern-grid" id="recent-projects-grid">
+                    <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
+                        <p style="color:#888;">Loading projects...</p>
                     </div>
-                    <div class="stat-value">--</div>
-                    <div class="stat-trend positive">--</div>
                 </div>
             </div>
 
-            <!-- Projects Section -->
-            <div class="section-header-modern">
-                <h2>Recent Projects</h2>
-                <button id="new-project" class="btn-modern-primary">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    New Project
-                </button>
-            </div>
+            <!-- Projects Tab -->
+            <div id="tab-projects" class="tab-content" style="display:none;">
+                <div class="section-header-modern">
+                    <h2>Collaborative Projects</h2>
+                </div>
+                <div class="projects-modern-grid" id="collaborative-projects-grid">
+                    <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
+                        <p style="color:#888;">Loading...</p>
+                    </div>
+                </div>
 
-            <div class="projects-modern-grid" id="projects-grid">
-                <!-- Projects will be loaded dynamically -->
-                <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
-                    <p style="color:#888;">Loading projects...</p>
+                <div class="section-header-modern" style="margin-top:32px;">
+                    <h2>Starred Projects</h2>
+                </div>
+                <div class="projects-modern-grid" id="starred-projects-grid">
+                    <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
+                        <p style="color:#888;">No starred projects yet</p>
+                    </div>
+                </div>
+
+                <div class="section-header-modern" style="margin-top:32px;">
+                    <h2>My Projects</h2>
+                    <button id="new-project" class="btn-modern-primary">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        New Project
+                    </button>
+                </div>
+                <div class="projects-modern-grid" id="my-projects-grid">
+                    <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
+                        <p style="color:#888;">Loading...</p>
+                    </div>
                 </div>
             </div>
+
+            <!-- Teams Tab -->
+            <div id="tab-teams" class="tab-content" style="display:none;">
+                <div class="section-header-modern">
+                    <h2>My Teams</h2>
+                    <button id="create-team-btn" class="btn-modern-primary">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Create Team
+                    </button>
+                </div>
+                <div class="projects-modern-grid" id="teams-grid">
+                    <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
+                        <p style="color:#888;">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
         </main>
     `;
 
     container.appendChild(page);
 
+    // Add Friends Dialog
+    const friendsDialog = document.createElement("div");
+    friendsDialog.id = "friends-dialog";
+    friendsDialog.style.cssText = `
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    `;
+    friendsDialog.innerHTML = `
+        <div style="background: rgba(20, 20, 20, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; font-size: 1.25rem; color: white;">Friends</h2>
+                <button id="close-friends-dialog" style="background: transparent; border: none; color: #888; cursor: pointer; font-size: 24px; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px;">×</button>
+            </div>
+            
+            <div style="padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                <div style="display: flex; gap: 8px;">
+                    <input type="email" id="friend-email-input" placeholder="Enter friend's email" style="flex: 1; padding: 10px 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white; font-size: 14px;">
+                    <button id="send-friend-request-btn" class="btn-modern-primary" style="padding: 10px 20px; white-space: nowrap;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Friend
+                    </button>
+                </div>
+            </div>
+
+            <div style="flex: 1; overflow-y: auto; padding: 1.5rem;">
+                <div style="margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.875rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em;">Friend Requests</h3>
+                    <div id="friend-requests-list"></div>
+                </div>
+
+                <div>
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.875rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em;">My Friends</h3>
+                    <div id="friends-list"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(friendsDialog);
+
+    // Add Notifications Dialog
+    const notificationsDialog = document.createElement("div");
+    notificationsDialog.id = "notifications-dialog";
+    notificationsDialog.style.cssText = `
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    `;
+    notificationsDialog.innerHTML = `
+        <div style="background: rgba(20, 20, 20, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; font-size: 1.25rem; color: white;">Notifications</h2>
+                <button id="close-notifications-dialog" style="background: transparent; border: none; color: #888; cursor: pointer; font-size: 24px; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px;">×</button>
+            </div>
+            
+            <div style="flex: 1; overflow-y: auto; padding: 1.5rem;">
+                <div id="notifications-list"></div>
+            </div>
+        </div>
+    `;
+    container.appendChild(notificationsDialog);
+
+    // Add Create Team Dialog
+    const createTeamDialog = document.createElement("div");
+    createTeamDialog.id = "create-team-dialog";
+    createTeamDialog.style.cssText = `
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    `;
+    createTeamDialog.innerHTML = `
+        <div style="background: rgba(20, 20, 20, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 90%; max-width: 700px; max-height: 85vh; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; font-size: 1.25rem; color: white;">Create Team</h2>
+                <button id="close-create-team-dialog" style="background: transparent; border: none; color: #888; cursor: pointer; font-size: 24px; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px;">×</button>
+            </div>
+            
+            <div style="flex: 1; overflow-y: auto; padding: 1.5rem;">
+                <!-- Team Name -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; color: #888; font-size: 13px; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Team Name *</label>
+                    <input type="text" id="team-name-input" placeholder="Enter team name" style="width: 100%; padding: 10px 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white; font-size: 14px;">
+                </div>
+
+                <!-- Team Description -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; color: #888; font-size: 13px; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Description</label>
+                    <textarea id="team-description-input" placeholder="Enter team description (optional)" style="width: 100%; padding: 10px 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white; font-size: 14px; min-height: 80px; resize: vertical; font-family: inherit;"></textarea>
+                </div>
+
+                <!-- Add Friends as Members -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; color: #888; font-size: 13px; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Add Friends</label>
+                    <div id="friends-selection-list" style="max-height: 150px; overflow-y: auto; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 8px;">
+                        <div style="text-align: center; color: #666; padding: 20px; font-size: 13px;">Loading friends...</div>
+                    </div>
+                </div>
+
+                <!-- Invite by Email -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; color: #888; font-size: 13px; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Invite Collaborators by Email</label>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <input type="email" id="team-invite-email-input" placeholder="Enter email address" style="flex: 1; padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white; font-size: 13px;">
+                        <button id="add-team-invite-btn" style="padding: 8px 16px; background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap;">Add</button>
+                    </div>
+                    <div id="team-invites-list" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+                </div>
+
+                <!-- Project Options -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; color: #888; font-size: 13px; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Project</label>
+                    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: white; font-size: 14px;">
+                            <input type="radio" name="project-option" value="new" checked style="cursor: pointer;">
+                            <span>Create New Project</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: white; font-size: 14px;">
+                            <input type="radio" name="project-option" value="existing" style="cursor: pointer;">
+                            <span>Add Existing Project</span>
+                        </label>
+                    </div>
+
+                    <!-- New Project Input -->
+                    <div id="new-project-section">
+                        <input type="text" id="team-project-name-input" placeholder="Enter project name" style="width: 100%; padding: 10px 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white; font-size: 14px;">
+                    </div>
+
+                    <!-- Existing Project Selection -->
+                    <div id="existing-project-section" style="display: none;">
+                        <select id="team-existing-project-select" style="width: 100%; padding: 10px 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white; font-size: 14px; cursor: pointer;">
+                            <option value="" style="background: #1a1a1a; color: white;">Select a project...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="padding: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: flex-end; gap: 12px;">
+                <button id="cancel-create-team-btn" style="padding: 10px 20px; background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Cancel</button>
+                <button id="submit-create-team-btn" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Create Team</button>
+            </div>
+        </div>
+    `;
+    container.appendChild(createTeamDialog);
+
     // ─── Event handlers ─────────────────────────────────────────────────
+
+    // Tab switching
+    document.querySelectorAll(".menu-item").forEach((item) => {
+        item.addEventListener("click", (e) => {
+            e.preventDefault();
+            const tab = (item as HTMLElement).getAttribute("data-tab");
+            if (!tab) return;
+
+            // Update active menu item
+            document.querySelectorAll(".menu-item").forEach((i) => i.classList.remove("active"));
+            item.classList.add("active");
+
+            // Show corresponding tab content
+            document.querySelectorAll(".tab-content").forEach((t) => {
+                (t as HTMLElement).style.display = "none";
+            });
+            const tabContent = document.getElementById(`tab-${tab}`);
+            if (tabContent) {
+                tabContent.style.display = "block";
+            }
+
+            // Load data for the tab
+            switch (tab) {
+                case "overview":
+                    loadOverview(router);
+                    break;
+                case "projects":
+                    loadProjectsTab(router);
+                    break;
+                case "teams":
+                    loadTeams(router);
+                    break;
+            }
+        });
+    });
 
     document.getElementById("logout-btn")?.addEventListener("click", async () => {
         try {
@@ -154,28 +410,698 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
     });
 
     document.getElementById("new-project")?.addEventListener("click", async () => {
-        try {
-            const projectName = prompt("Enter project name:", `Project-${Date.now()}`);
-            if (!projectName) return;
+        await createNewProject(router);
+    });
 
-            // Create project in Firestore — generates a session ID
-            const project = await projectService.createProject(projectName);
+    // Create Team Dialog handlers (set up once)
+    let createTeamHandlersAttached = false;
 
-            // Store the session ID so editor & AI chat can use it
-            localStorage.setItem("currentSessionId", project.sessionId);
-            localStorage.setItem("currentProjectName", project.projectName);
+    function attachCreateTeamDialogHandlers(router: IRouter) {
+        if (createTeamHandlersAttached) return;
+        createTeamHandlersAttached = true;
 
-            // Navigate to editor with session ID in URL
-            router.navigate(`/editor?sessionId=${project.sessionId}`);
-        } catch (error) {
-            console.error("Failed to create project:", error);
-            alert("Failed to create project. Please try again.");
+        document.getElementById("close-create-team-dialog")?.addEventListener("click", () => {
+            const dialog = document.getElementById("create-team-dialog");
+            if (dialog) dialog.style.display = "none";
+        });
+
+        document.getElementById("cancel-create-team-btn")?.addEventListener("click", () => {
+            const dialog = document.getElementById("create-team-dialog");
+            if (dialog) dialog.style.display = "none";
+        });
+
+        document.getElementById("create-team-dialog")?.addEventListener("click", (e) => {
+            if (e.target === document.getElementById("create-team-dialog")) {
+                const dialog = document.getElementById("create-team-dialog");
+                if (dialog) dialog.style.display = "none";
+            }
+        });
+
+        // Project option radio buttons
+        document.querySelectorAll('input[name="project-option"]').forEach((radio) => {
+            radio.addEventListener("change", (e) => {
+                const value = (e.target as HTMLInputElement).value;
+                const newSection = document.getElementById("new-project-section");
+                const existingSection = document.getElementById("existing-project-section");
+
+                if (value === "new") {
+                    if (newSection) newSection.style.display = "block";
+                    if (existingSection) existingSection.style.display = "none";
+                } else {
+                    if (newSection) newSection.style.display = "none";
+                    if (existingSection) existingSection.style.display = "block";
+                }
+            });
+        });
+
+        // Add invite email
+        document.getElementById("add-team-invite-btn")?.addEventListener("click", () => {
+            const input = document.getElementById("team-invite-email-input") as HTMLInputElement;
+            const email = input?.value.trim();
+            if (!email) return;
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert("Please enter a valid email address");
+                return;
+            }
+
+            addInviteEmailTag(email);
+            input.value = "";
+        });
+
+        // Submit create team
+        document.getElementById("submit-create-team-btn")?.addEventListener("click", async () => {
+            await handleCreateTeam(router);
+        });
+    }
+
+    // Attach dialog handlers immediately
+    attachCreateTeamDialogHandlers(router);
+
+    // Create Team button handler (using event delegation since button is in Teams tab)
+    document.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        if (target.id === "create-team-btn" || target.closest("#create-team-btn")) {
+            const dialog = document.getElementById("create-team-dialog");
+            if (dialog) {
+                dialog.style.display = "flex";
+                loadCreateTeamDialog(router);
+            }
         }
     });
 
-    // ─── Load real projects from Firestore ──────────────────────────────
-    loadProjects(router);
+    // Friends dialog handlers
+    document.getElementById("friends-btn")?.addEventListener("click", () => {
+        const dialog = document.getElementById("friends-dialog");
+        if (dialog) {
+            dialog.style.display = "flex";
+            loadFriendsDialog();
+        }
+    });
+
+    document.getElementById("close-friends-dialog")?.addEventListener("click", () => {
+        const dialog = document.getElementById("friends-dialog");
+        if (dialog) dialog.style.display = "none";
+    });
+
+    document.getElementById("friends-dialog")?.addEventListener("click", (e) => {
+        if (e.target === document.getElementById("friends-dialog")) {
+            const dialog = document.getElementById("friends-dialog");
+            if (dialog) dialog.style.display = "none";
+        }
+    });
+
+    document.getElementById("send-friend-request-btn")?.addEventListener("click", async () => {
+        const input = document.getElementById("friend-email-input") as HTMLInputElement;
+        const email = input?.value.trim();
+        if (!email) {
+            alert("Please enter an email address");
+            return;
+        }
+
+        try {
+            const { friendService } = await import("chili-core");
+            await friendService.sendFriendRequest(email);
+            alert("Friend request sent!");
+            input.value = "";
+            loadFriendsDialog();
+        } catch (error: any) {
+            console.error("Failed to send friend request:", error);
+            alert(error.message || "Failed to send friend request");
+        }
+    });
+
+    // Notifications dialog handlers
+    document.getElementById("notifications-btn")?.addEventListener("click", () => {
+        const dialog = document.getElementById("notifications-dialog");
+        if (dialog) {
+            dialog.style.display = "flex";
+            loadNotificationsDialog();
+        }
+    });
+
+    document.getElementById("close-notifications-dialog")?.addEventListener("click", () => {
+        const dialog = document.getElementById("notifications-dialog");
+        if (dialog) dialog.style.display = "none";
+    });
+
+    document.getElementById("notifications-dialog")?.addEventListener("click", (e) => {
+        if (e.target === document.getElementById("notifications-dialog")) {
+            const dialog = document.getElementById("notifications-dialog");
+            if (dialog) dialog.style.display = "none";
+        }
+    });
+
+    // Load notification count on page load
+    updateNotificationBadge();
+
+    // ─── Load initial data ──────────────────────────────────────────────
+    loadOverview(router);
 }
+
+// ─── Friends Dialog Functions ───────────────────────────────────────────
+
+async function loadFriendsDialog(): Promise<void> {
+    try {
+        const { friendService } = await import("chili-core");
+        const [requests, friends] = await Promise.all([
+            friendService.getFriendRequests(),
+            friendService.getFriends(),
+        ]);
+
+        // Load friend requests
+        const requestsList = document.getElementById("friend-requests-list");
+        if (requestsList) {
+            if (requests.length === 0) {
+                requestsList.innerHTML = `
+                    <div style="text-align: center; color: #666; padding: 20px; font-size: 14px;">
+                        No pending friend requests
+                    </div>
+                `;
+            } else {
+                requestsList.innerHTML = "";
+                for (const request of requests) {
+                    const requestCard = document.createElement("div");
+                    requestCard.style.cssText = `
+                        background: rgba(255, 255, 255, 0.03);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    requestCard.innerHTML = `
+                        <div>
+                            <div style="color: white; font-weight: 500; margin-bottom: 4px;">${escapeHtml(request.fromName)}</div>
+                            <div style="color: #888; font-size: 12px;">${escapeHtml(request.fromEmail)}</div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="accept-friend-btn" data-request-id="${request.id}" style="padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Accept</button>
+                            <button class="reject-friend-btn" data-request-id="${request.id}" style="padding: 6px 12px; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Reject</button>
+                        </div>
+                    `;
+                    requestsList.appendChild(requestCard);
+                }
+
+                // Add event listeners for accept/reject
+                requestsList.querySelectorAll(".accept-friend-btn").forEach((btn) => {
+                    btn.addEventListener("click", async (e) => {
+                        const requestId = (e.target as HTMLElement).getAttribute("data-request-id");
+                        if (!requestId) return;
+                        try {
+                            await friendService.acceptFriendRequest(requestId);
+                            loadFriendsDialog();
+                        } catch (error) {
+                            console.error("Failed to accept friend request:", error);
+                            alert("Failed to accept friend request");
+                        }
+                    });
+                });
+
+                requestsList.querySelectorAll(".reject-friend-btn").forEach((btn) => {
+                    btn.addEventListener("click", async (e) => {
+                        const requestId = (e.target as HTMLElement).getAttribute("data-request-id");
+                        if (!requestId) return;
+                        try {
+                            await friendService.rejectFriendRequest(requestId);
+                            loadFriendsDialog();
+                        } catch (error) {
+                            console.error("Failed to reject friend request:", error);
+                            alert("Failed to reject friend request");
+                        }
+                    });
+                });
+            }
+        }
+
+        // Load friends list
+        const friendsList = document.getElementById("friends-list");
+        if (friendsList) {
+            if (friends.length === 0) {
+                friendsList.innerHTML = `
+                    <div style="text-align: center; color: #666; padding: 20px; font-size: 14px;">
+                        No friends yet. Add friends to collaborate!
+                    </div>
+                `;
+            } else {
+                friendsList.innerHTML = "";
+                for (const friend of friends) {
+                    const friendCard = document.createElement("div");
+                    friendCard.style.cssText = `
+                        background: rgba(255, 255, 255, 0.03);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    friendCard.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 16px;">
+                                ${friend.friendName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div style="color: white; font-weight: 500; margin-bottom: 2px;">${escapeHtml(friend.friendName)}</div>
+                                <div style="color: #888; font-size: 12px;">${escapeHtml(friend.friendEmail)}</div>
+                            </div>
+                        </div>
+                        <button class="remove-friend-btn" data-friend-id="${friend.friendId}" style="padding: 6px 12px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Remove</button>
+                    `;
+                    friendsList.appendChild(friendCard);
+                }
+
+                // Add event listeners for remove
+                friendsList.querySelectorAll(".remove-friend-btn").forEach((btn) => {
+                    btn.addEventListener("click", async (e) => {
+                        const friendId = (e.target as HTMLElement).getAttribute("data-friend-id");
+                        if (!friendId) return;
+                        if (!confirm("Remove this friend?")) return;
+                        try {
+                            await friendService.removeFriend(friendId);
+                            loadFriendsDialog();
+                        } catch (error) {
+                            console.error("Failed to remove friend:", error);
+                            alert("Failed to remove friend");
+                        }
+                    });
+                });
+            }
+        }
+    } catch (error) {
+        console.error("Failed to load friends:", error);
+    }
+}
+
+// ─── Notifications Dialog Functions ─────────────────────────────────────
+
+async function updateNotificationBadge(): Promise<void> {
+    try {
+        const { friendService, accessRequestService, auth, shareService } = await import("chili-core");
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const friendRequests = await friendService.getFriendRequests();
+        const accessRequests = await accessRequestService.getMyRequests();
+        const projectInvitations = await shareService.getProjectInvitations();
+
+        // Get team invitations count
+        const { collection, query, where, getDocs } = await import("firebase/firestore");
+        const { db } = await import("chili-core");
+        const teamInvitationsRef = collection(db, "teamInvitations");
+        const teamInvitationsQuery = query(
+            teamInvitationsRef,
+            where("invitedEmail", "==", user.email),
+            where("status", "==", "pending"),
+        );
+        const teamInvitationsSnap = await getDocs(teamInvitationsQuery);
+
+        const totalNotifications =
+            friendRequests.length +
+            accessRequests.length +
+            teamInvitationsSnap.size +
+            projectInvitations.length;
+
+        console.log("Notifications found:", {
+            friendRequests: friendRequests.length,
+            accessRequests: accessRequests.length,
+            teamInvitations: teamInvitationsSnap.size,
+            projectInvitations: projectInvitations.length,
+            total: totalNotifications,
+        });
+
+        const badge = document.getElementById("notification-badge");
+        if (badge) {
+            if (totalNotifications > 0) {
+                badge.style.display = "block";
+            } else {
+                badge.style.display = "none";
+            }
+        }
+    } catch (error) {
+        console.error("Failed to update notification badge:", error);
+    }
+}
+
+async function loadNotificationsDialog(): Promise<void> {
+    try {
+        const { friendService, accessRequestService, auth } = await import("chili-core");
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const friendRequests = await friendService.getFriendRequests();
+        const accessRequests = await accessRequestService.getMyRequests();
+
+        // Get team invitations
+        const { collection, query, where, getDocs } = await import("firebase/firestore");
+        const { db, shareService } = await import("chili-core");
+        const teamInvitationsRef = collection(db, "teamInvitations");
+        const teamInvitationsQuery = query(
+            teamInvitationsRef,
+            where("invitedEmail", "==", user.email),
+            where("status", "==", "pending"),
+        );
+        const teamInvitationsSnap = await getDocs(teamInvitationsQuery);
+        const teamInvitations = teamInvitationsSnap.docs.map((doc) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                teamId: data.teamId as string,
+                teamName: data.teamName as string,
+                invitedByEmail: data.invitedByEmail as string,
+                invitedEmail: data.invitedEmail as string,
+                status: data.status as string,
+            };
+        });
+
+        // Get project invitations
+        const projectInvitations = await shareService.getProjectInvitations();
+
+        const notificationsList = document.getElementById("notifications-list");
+        if (!notificationsList) return;
+
+        const totalNotifications =
+            friendRequests.length +
+            accessRequests.length +
+            teamInvitations.length +
+            projectInvitations.length;
+
+        if (totalNotifications === 0) {
+            notificationsList.innerHTML = `
+                <div style="text-align: center; color: #666; padding: 40px; font-size: 14px;">
+                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto 12px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <p>No new notifications</p>
+                </div>
+            `;
+        } else {
+            notificationsList.innerHTML = "";
+
+            // Add Team Invitations
+            for (const invitation of teamInvitations) {
+                const notificationCard = document.createElement("div");
+                notificationCard.style.cssText = `
+                    background: rgba(34, 197, 94, 0.1);
+                    border: 1px solid rgba(34, 197, 94, 0.2);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 12px;
+                `;
+                notificationCard.innerHTML = `
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #22c55e 0%, #10b981 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 16px; flex-shrink: 0;">
+                            T
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="color: white; font-weight: 600; margin-bottom: 4px;">Team Invitation</div>
+                            <div style="color: rgba(255, 255, 255, 0.8); font-size: 14px; margin-bottom: 8px;">
+                                You've been invited to join the team <strong>${escapeHtml(invitation.teamName)}</strong>
+                            </div>
+                            <div style="color: #888; font-size: 12px; margin-bottom: 12px;">
+                                Invited by ${escapeHtml(invitation.invitedByEmail)}
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="accept-team-invite-btn" data-invitation-id="${invitation.id}" data-team-id="${invitation.teamId}" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Accept</button>
+                                <button class="reject-team-invite-btn" data-invitation-id="${invitation.id}" style="padding: 8px 16px; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Decline</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                notificationsList.appendChild(notificationCard);
+            }
+
+            // Add Access Requests
+            for (const request of accessRequests) {
+                const notificationCard = document.createElement("div");
+                notificationCard.style.cssText = `
+                    background: rgba(168, 85, 247, 0.1);
+                    border: 1px solid rgba(168, 85, 247, 0.2);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 12px;
+                `;
+                notificationCard.innerHTML = `
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 16px; flex-shrink: 0;">
+                            ${request.requesterName.charAt(0).toUpperCase()}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="color: white; font-weight: 600; margin-bottom: 4px;">Project Access Request</div>
+                            <div style="color: rgba(255, 255, 255, 0.8); font-size: 14px; margin-bottom: 8px;">
+                                <strong>${escapeHtml(request.requesterName)}</strong> (${escapeHtml(request.requesterEmail)}) wants access to your project
+                            </div>
+                            ${request.message ? `<div style="color: #888; font-size: 13px; margin-bottom: 8px; font-style: italic;">"${escapeHtml(request.message)}"</div>` : ""}
+                            <div style="color: #888; font-size: 12px; margin-bottom: 12px;">
+                                ${formatTimeAgo(request.requestedAt)}
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="approve-access-btn" data-request-id="${request.id}" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Approve</button>
+                                <button class="reject-access-btn" data-request-id="${request.id}" style="padding: 8px 16px; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Reject</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                notificationsList.appendChild(notificationCard);
+            }
+
+            // Add Project Invitations
+            for (const invitation of projectInvitations) {
+                const notificationCard = document.createElement("div");
+                notificationCard.style.cssText = `
+                    background: rgba(59, 130, 246, 0.1);
+                    border: 1px solid rgba(59, 130, 246, 0.2);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 12px;
+                `;
+                notificationCard.innerHTML = `
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 16px; flex-shrink: 0;">
+                            P
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="color: white; font-weight: 600; margin-bottom: 4px;">Project Invitation</div>
+                            <div style="color: rgba(255, 255, 255, 0.8); font-size: 14px; margin-bottom: 8px;">
+                                You've been invited to collaborate on <strong>${escapeHtml(invitation.projectName)}</strong>
+                            </div>
+                            <div style="color: #888; font-size: 12px; margin-bottom: 12px;">
+                                Invited by ${escapeHtml(invitation.ownerEmail)}
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="accept-project-invite-btn" data-invitation-id="${invitation.id}" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Accept</button>
+                                <button class="reject-project-invite-btn" data-invitation-id="${invitation.id}" style="padding: 8px 16px; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Decline</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                notificationsList.appendChild(notificationCard);
+            }
+
+            // Add Friend Requests
+            for (const request of friendRequests) {
+                const notificationCard = document.createElement("div");
+                notificationCard.style.cssText = `
+                    background: rgba(59, 130, 246, 0.1);
+                    border: 1px solid rgba(59, 130, 246, 0.2);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 12px;
+                `;
+                notificationCard.innerHTML = `
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <div style="width: 40px; height="40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 16px; flex-shrink: 0;">
+                            ${request.fromName.charAt(0).toUpperCase()}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="color: white; font-weight: 600; margin-bottom: 4px;">Friend Request</div>
+                            <div style="color: rgba(255, 255, 255, 0.8); font-size: 14px; margin-bottom: 8px;">
+                                <strong>${escapeHtml(request.fromName)}</strong> (${escapeHtml(request.fromEmail)}) wants to be your friend
+                            </div>
+                            <div style="color: #888; font-size: 12px; margin-bottom: 12px;">
+                                ${formatTimeAgo(request.createdAt)}
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="accept-notification-btn" data-request-id="${request.id}" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Accept</button>
+                                <button class="reject-notification-btn" data-request-id="${request.id}" style="padding: 8px 16px; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Decline</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                notificationsList.appendChild(notificationCard);
+            }
+
+            // Add event listeners for access requests
+            notificationsList.querySelectorAll(".approve-access-btn").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const requestId = (e.target as HTMLElement).getAttribute("data-request-id");
+                    if (!requestId) return;
+                    try {
+                        await accessRequestService.approveRequest(requestId, "editor");
+                        loadNotificationsDialog();
+                        updateNotificationBadge();
+                        alert("Access request approved!");
+                    } catch (error) {
+                        console.error("Failed to approve access request:", error);
+                        alert("Failed to approve access request");
+                    }
+                });
+            });
+
+            notificationsList.querySelectorAll(".reject-access-btn").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const requestId = (e.target as HTMLElement).getAttribute("data-request-id");
+                    if (!requestId) return;
+                    try {
+                        await accessRequestService.rejectRequest(requestId);
+                        loadNotificationsDialog();
+                        updateNotificationBadge();
+                    } catch (error) {
+                        console.error("Failed to reject access request:", error);
+                        alert("Failed to reject access request");
+                    }
+                });
+            });
+
+            // Add event listeners for friend requests
+            notificationsList.querySelectorAll(".accept-notification-btn").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const requestId = (e.target as HTMLElement).getAttribute("data-request-id");
+                    if (!requestId) return;
+                    try {
+                        await friendService.acceptFriendRequest(requestId);
+                        loadNotificationsDialog();
+                        updateNotificationBadge();
+                        alert("Friend request accepted!");
+                    } catch (error) {
+                        console.error("Failed to accept friend request:", error);
+                        alert("Failed to accept friend request");
+                    }
+                });
+            });
+
+            notificationsList.querySelectorAll(".reject-notification-btn").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const requestId = (e.target as HTMLElement).getAttribute("data-request-id");
+                    if (!requestId) return;
+                    try {
+                        await friendService.rejectFriendRequest(requestId);
+                        loadNotificationsDialog();
+                        updateNotificationBadge();
+                    } catch (error) {
+                        console.error("Failed to reject friend request:", error);
+                        alert("Failed to reject friend request");
+                    }
+                });
+            });
+
+            // Add event listeners for team invitations
+            notificationsList.querySelectorAll(".accept-team-invite-btn").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const invitationId = (e.target as HTMLElement).getAttribute("data-invitation-id");
+                    const teamId = (e.target as HTMLElement).getAttribute("data-team-id");
+                    if (!invitationId || !teamId) return;
+                    try {
+                        const { doc, updateDoc, setDoc, serverTimestamp } = await import(
+                            "firebase/firestore"
+                        );
+                        const { db, auth } = await import("chili-core");
+                        const user = auth.currentUser;
+                        if (!user) return;
+
+                        // Add user to team members subcollection
+                        const memberData = {
+                            uid: user.uid,
+                            email: user.email!,
+                            displayName: user.displayName || user.email!.split("@")[0],
+                            role: "editor",
+                            joinedAt: serverTimestamp(),
+                        };
+                        await setDoc(doc(db, "teams", teamId, "members", user.uid), memberData);
+
+                        // Update invitation status
+                        await updateDoc(doc(db, "teamInvitations", invitationId), {
+                            status: "accepted",
+                        });
+
+                        loadNotificationsDialog();
+                        updateNotificationBadge();
+                        alert("Team invitation accepted!");
+                    } catch (error) {
+                        console.error("Failed to accept team invitation:", error);
+                        alert("Failed to accept team invitation");
+                    }
+                });
+            });
+
+            notificationsList.querySelectorAll(".reject-team-invite-btn").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const invitationId = (e.target as HTMLElement).getAttribute("data-invitation-id");
+                    if (!invitationId) return;
+                    try {
+                        const { doc, updateDoc } = await import("firebase/firestore");
+                        const { db } = await import("chili-core");
+
+                        // Update invitation status
+                        await updateDoc(doc(db, "teamInvitations", invitationId), {
+                            status: "rejected",
+                        });
+
+                        loadNotificationsDialog();
+                        updateNotificationBadge();
+                    } catch (error) {
+                        console.error("Failed to reject team invitation:", error);
+                        alert("Failed to reject team invitation");
+                    }
+                });
+            });
+
+            // Add event listeners for project invitations
+            notificationsList.querySelectorAll(".accept-project-invite-btn").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const invitationId = (e.target as HTMLElement).getAttribute("data-invitation-id");
+                    if (!invitationId) return;
+                    try {
+                        const { shareService } = await import("chili-core");
+                        await shareService.acceptProjectInvitation(invitationId);
+                        loadNotificationsDialog();
+                        updateNotificationBadge();
+                        alert(
+                            "Project invitation accepted! The project is now in your Collaborative Projects.",
+                        );
+                    } catch (error) {
+                        console.error("Failed to accept project invitation:", error);
+                        alert("Failed to accept project invitation");
+                    }
+                });
+            });
+
+            notificationsList.querySelectorAll(".reject-project-invite-btn").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const invitationId = (e.target as HTMLElement).getAttribute("data-invitation-id");
+                    if (!invitationId) return;
+                    try {
+                        const { shareService } = await import("chili-core");
+                        await shareService.rejectProjectInvitation(invitationId);
+                        loadNotificationsDialog();
+                        updateNotificationBadge();
+                    } catch (error) {
+                        console.error("Failed to reject project invitation:", error);
+                        alert("Failed to reject project invitation");
+                    }
+                });
+            });
+        }
+    } catch (error) {
+        console.error("Failed to load notifications:", error);
+    }
+}
+
+// ─── Helper Functions ───────────────────────────────────────────────────
 
 function formatTimeAgo(date: Date): string {
     const now = new Date();
@@ -192,25 +1118,56 @@ function formatTimeAgo(date: Date): string {
     return date.toLocaleDateString();
 }
 
-async function loadProjects(router: IRouter): Promise<void> {
-    const grid = document.getElementById("projects-grid");
-    const countEl = document.getElementById("total-projects-count");
+function escapeHtml(str: string): string {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+}
 
+async function createNewProject(router: IRouter): Promise<void> {
+    try {
+        const projectName = prompt("Enter project name:", `Project-${Date.now()}`);
+        if (!projectName) return;
+
+        const project = await projectService.createProject(projectName);
+        localStorage.setItem("currentSessionId", project.sessionId);
+        localStorage.setItem("currentProjectName", project.projectName);
+        localStorage.setItem("currentProjectOwnerId", project.userId);
+        router.navigate(`/editor?sessionId=${project.sessionId}`);
+    } catch (error) {
+        console.error("Failed to create project:", error);
+        alert("Failed to create project. Please try again.");
+    }
+}
+
+// ─── Overview Tab ───────────────────────────────────────────────────────
+
+async function loadOverview(router: IRouter): Promise<void> {
     try {
         const projects = await projectService.getProjects();
+        const { shareService, teamService } = await import("chili-core");
+        const sharedProjects = await shareService.getSharedProjects();
+        const teams = await teamService.getMyTeams();
 
-        if (countEl) countEl.textContent = String(projects.length);
+        // Update stats
+        const totalCount = document.getElementById("total-projects-count");
+        const teamsCount = document.getElementById("teams-count");
+        if (totalCount) totalCount.textContent = String(projects.length + sharedProjects.length);
+        if (teamsCount) teamsCount.textContent = String(teams.length);
 
+        // Load recent projects (last 6)
+        const recentProjects = projects.slice(0, 6);
+        const grid = document.getElementById("recent-projects-grid");
         if (!grid) return;
 
-        if (projects.length === 0) {
+        if (recentProjects.length === 0) {
             grid.innerHTML = `
                 <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;cursor:default;">
                     <div style="text-align:center;color:#888;">
                         <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin:0 auto 12px;">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
                         </svg>
-                        <p>No projects yet. Click "New Project" to get started.</p>
+                        <p>No projects yet. Go to Projects tab to create one.</p>
                     </div>
                 </div>
             `;
@@ -218,72 +1175,608 @@ async function loadProjects(router: IRouter): Promise<void> {
         }
 
         grid.innerHTML = "";
+        for (const project of recentProjects) {
+            const card = createProjectCard(project, router, false);
+            grid.appendChild(card);
+        }
+    } catch (error) {
+        console.error("Failed to load overview:", error);
+    }
+}
 
-        for (const project of projects) {
+// ─── Projects Tab ───────────────────────────────────────────────────────
+
+async function loadProjectsTab(router: IRouter): Promise<void> {
+    try {
+        const projects = await projectService.getProjects();
+        const starredProjects = await projectService.getStarredProjects();
+        const { shareService } = await import("chili-core");
+        const sharedProjects = await shareService.getSharedProjects();
+
+        // Load starred projects
+        const starredGrid = document.getElementById("starred-projects-grid");
+        if (starredGrid) {
+            if (starredProjects.length === 0) {
+                starredGrid.innerHTML = `
+                    <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;cursor:default;">
+                        <div style="text-align:center;color:#888;">
+                            <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin:0 auto 12px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                            <p>Star your favorite projects to see them here</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                starredGrid.innerHTML = "";
+                for (const project of starredProjects) {
+                    const card = createProjectCard(project, router, true);
+                    starredGrid.appendChild(card);
+                }
+            }
+        }
+
+        // Load my projects
+        const myGrid = document.getElementById("my-projects-grid");
+        if (myGrid) {
+            if (projects.length === 0) {
+                myGrid.innerHTML = `
+                    <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;cursor:default;">
+                        <div style="text-align:center;color:#888;">
+                            <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin:0 auto 12px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <p>No projects yet. Click "New Project" to get started.</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                myGrid.innerHTML = "";
+                for (const project of projects) {
+                    const card = createProjectCard(project, router, true);
+                    myGrid.appendChild(card);
+                }
+            }
+        }
+
+        // Load collaborative projects (shared with me)
+        const collabGrid = document.getElementById("collaborative-projects-grid");
+        if (collabGrid) {
+            if (sharedProjects.length === 0) {
+                collabGrid.innerHTML = `
+                    <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;cursor:default;">
+                        <div style="text-align:center;color:#888;">
+                            <p>No collaborative projects yet</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                collabGrid.innerHTML = "";
+                for (const share of sharedProjects) {
+                    const card = createSharedProjectCard(share, router);
+                    collabGrid.appendChild(card);
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Failed to load projects tab:", error);
+    }
+}
+
+function createProjectCard(project: any, router: IRouter, showDelete: boolean): HTMLElement {
+    const card = document.createElement("div");
+    card.className = "project-glass-card";
+    card.style.position = "relative";
+    card.style.cursor = "pointer";
+
+    const isStarred = project.starred === true;
+
+    card.innerHTML = `
+        <div class="project-preview">
+            <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+        </div>
+        <div class="project-info-modern">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                <h3 style="margin:0;flex:1;">${escapeHtml(project.projectName)}</h3>
+                <button class="project-history-btn" title="View edit history" style="background:rgba(100,100,100,0.2);border:none;color:#888;border-radius:4px;padding:4px 8px;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap;">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    History
+                </button>
+            </div>
+            <p class="project-time">Updated ${formatTimeAgo(project.lastModified)}</p>
+            <div class="project-tags">
+                <span class="tag-modern">${project.fileUrl ? "Saved" : "New"}</span>
+            </div>
+        </div>
+        <div class="project-actions" style="position:absolute;top:8px;right:8px;display:flex;gap:4px;">
+            <button class="project-star-btn" data-starred="${isStarred}" title="${isStarred ? "Unstar project" : "Star project"}" style="background:${isStarred ? "rgba(255,215,0,0.3)" : "rgba(255,215,0,0.15)"};border:none;color:#ffd700;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                <svg width="16" height="16" fill="${isStarred ? "currentColor" : "none"}" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+            </button>
+            <button class="project-open-btn" title="Open project" style="background:rgba(59,130,246,0.15);border:none;color:#3b82f6;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+            </button>
+            ${
+                showDelete
+                    ? `<button class="project-delete-btn" title="Delete project" style="background:rgba(255,60,60,0.15);border:none;color:#ff4444;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">✕</button>`
+                    : ""
+            }
+        </div>
+    `;
+
+    // Star button
+    const starBtn = card.querySelector(".project-star-btn");
+    starBtn?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const currentStarred = starBtn.getAttribute("data-starred") === "true";
+        const newStarred = !currentStarred;
+
+        try {
+            // Update in Firestore
+            await projectService.toggleStarProject(project.sessionId, newStarred);
+
+            // Update UI
+            starBtn.setAttribute("data-starred", String(newStarred));
+            starBtn.setAttribute("title", newStarred ? "Unstar project" : "Star project");
+
+            const svg = starBtn.querySelector("svg");
+            if (svg) {
+                if (newStarred) {
+                    svg.setAttribute("fill", "currentColor");
+                    starBtn.setAttribute(
+                        "style",
+                        starBtn
+                            .getAttribute("style")
+                            ?.replace("rgba(255,215,0,0.15)", "rgba(255,215,0,0.3)") || "",
+                    );
+                } else {
+                    svg.setAttribute("fill", "none");
+                    starBtn.setAttribute(
+                        "style",
+                        starBtn
+                            .getAttribute("style")
+                            ?.replace("rgba(255,215,0,0.3)", "rgba(255,215,0,0.15)") || "",
+                    );
+                }
+            }
+
+            // Update project object
+            project.starred = newStarred;
+
+            // Reload the projects tab if we're on it to update starred section
+            const projectsTab = document.getElementById("tab-projects");
+            if (projectsTab && projectsTab.style.display !== "none") {
+                loadProjectsTab(router);
+            }
+        } catch (error) {
+            console.error("Failed to toggle star:", error);
+            alert("Failed to update star status. Please try again.");
+        }
+    });
+
+    // History button
+    const historyBtn = card.querySelector(".project-history-btn");
+    historyBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        alert(
+            `Edit History for "${project.projectName}"\n\nLast edited by you ${formatTimeAgo(project.lastModified)}\n\n(Full history feature coming soon)`,
+        );
+    });
+
+    // Open button
+    const openBtn = card.querySelector(".project-open-btn");
+    openBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        localStorage.setItem("currentSessionId", project.sessionId);
+        localStorage.setItem("currentProjectName", project.projectName);
+        localStorage.setItem("currentProjectOwnerId", project.userId);
+        router.navigate(`/editor?sessionId=${project.sessionId}`);
+    });
+
+    // Delete button
+    if (showDelete) {
+        const deleteBtn = card.querySelector(".project-delete-btn");
+        deleteBtn?.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            if (!confirm(`Delete project "${project.projectName}"?`)) return;
+            try {
+                await projectService.deleteProject(project.sessionId);
+                card.remove();
+            } catch (err) {
+                console.error("Failed to delete project:", err);
+                alert("Failed to delete project.");
+            }
+        });
+    }
+
+    // Click card to open
+    card.addEventListener("click", () => {
+        localStorage.setItem("currentSessionId", project.sessionId);
+        localStorage.setItem("currentProjectName", project.projectName);
+        localStorage.setItem("currentProjectOwnerId", project.userId);
+        router.navigate(`/editor?sessionId=${project.sessionId}`);
+    });
+
+    return card;
+}
+
+function createSharedProjectCard(share: any, router: IRouter): HTMLElement {
+    const card = document.createElement("div");
+    card.className = "project-glass-card";
+    card.style.position = "relative";
+    card.innerHTML = `
+        <div class="project-preview">
+            <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+        </div>
+        <div class="project-info-modern">
+            <h3>Shared Project</h3>
+            <p class="project-time">Shared with you</p>
+            <div class="project-tags">
+                <span class="tag-modern">${share.permission}</span>
+            </div>
+            <div class="project-history" style="margin-top:8px;font-size:12px;color:#888;">
+                <div>Shared by ${escapeHtml(share.sharedBy)}</div>
+            </div>
+        </div>
+        <div class="project-actions" style="position:absolute;top:8px;right:8px;">
+            <button class="project-open-btn" title="Open project" style="background:rgba(59,130,246,0.15);border:none;color:#3b82f6;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+            </button>
+        </div>
+    `;
+
+    // Open button
+    const openBtn = card.querySelector(".project-open-btn");
+    openBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        localStorage.setItem("currentSessionId", share.projectId);
+        localStorage.setItem("currentProjectName", "Shared Project");
+        localStorage.setItem("currentProjectOwnerId", share.sharedBy);
+        router.navigate(`/editor?sessionId=${share.projectId}&owner=${share.sharedBy}`);
+    });
+
+    // Click card to open
+    card.addEventListener("click", () => {
+        localStorage.setItem("currentSessionId", share.projectId);
+        localStorage.setItem("currentProjectName", "Shared Project");
+        localStorage.setItem("currentProjectOwnerId", share.sharedBy);
+        router.navigate(`/editor?sessionId=${share.projectId}&owner=${share.sharedBy}`);
+    });
+
+    return card;
+}
+
+// ─── Teams Tab ──────────────────────────────────────────────────────────
+
+async function loadTeams(router: IRouter): Promise<void> {
+    const grid = document.getElementById("teams-grid");
+    if (!grid) return;
+
+    try {
+        const { teamService } = await import("chili-core");
+        const teams = await teamService.getMyTeams();
+
+        if (teams.length === 0) {
+            grid.innerHTML = `
+                <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;cursor:default;">
+                    <div style="text-align:center;color:#888;">
+                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin:0 auto 12px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <p>No teams yet. Click "Create Team" to get started.</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = "";
+        for (const team of teams) {
             const card = document.createElement("div");
             card.className = "project-glass-card";
             card.innerHTML = `
                 <div class="project-preview">
                     <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                 </div>
                 <div class="project-info-modern">
-                    <h3>${escapeHtml(project.projectName)}</h3>
-                    <p class="project-time">Updated ${formatTimeAgo(project.lastModified)}</p>
+                    <h3>${escapeHtml(team.name)}</h3>
+                    <p class="project-time">${team.members.length} members • ${team.projectIds.length} projects</p>
                     <div class="project-tags">
-                        <span class="tag-modern">${project.fileUrl ? "Saved" : "New"}</span>
+                        <span class="tag-modern">Member</span>
                     </div>
                 </div>
-                <button class="project-delete-btn" data-session-id="${project.sessionId}" title="Delete project" style="position:absolute;top:8px;right:8px;background:rgba(255,60,60,0.15);border:none;color:#ff4444;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">
-                    ✕
-                </button>
             `;
-            card.style.position = "relative";
-
-            // Click card → open project in editor
-            card.addEventListener("click", (e) => {
-                // Don't navigate if clicking the delete button
-                if ((e.target as HTMLElement).closest(".project-delete-btn")) return;
-
-                localStorage.setItem("currentSessionId", project.sessionId);
-                localStorage.setItem("currentProjectName", project.projectName);
-                router.navigate(`/editor?sessionId=${project.sessionId}`);
-            });
-
-            // Delete button
-            const deleteBtn = card.querySelector(".project-delete-btn");
-            deleteBtn?.addEventListener("click", async (e) => {
-                e.stopPropagation();
-                if (!confirm(`Delete project "${project.projectName}"?`)) return;
-                try {
-                    await projectService.deleteProject(project.sessionId);
-                    card.remove();
-                    // Update count
-                    const remaining = document.querySelectorAll(".project-glass-card").length;
-                    if (countEl) countEl.textContent = String(remaining);
-                } catch (err) {
-                    console.error("Failed to delete project:", err);
-                    alert("Failed to delete project.");
-                }
-            });
-
             grid.appendChild(card);
         }
     } catch (error) {
-        console.error("Failed to load projects:", error);
-        if (grid) {
-            grid.innerHTML = `
-                <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
-                    <p style="color:#ff4444;">Failed to load projects. Please try again.</p>
+        console.error("Failed to load teams:", error);
+        grid.innerHTML = `
+            <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
+                <p style="color:#ff4444;">Failed to load teams.</p>
+            </div>
+        `;
+    }
+}
+
+// ─── Create Team Dialog Functions ───────────────────────────────────────
+
+const selectedFriends = new Set<string>();
+const inviteEmails = new Set<string>();
+
+async function loadCreateTeamDialog(router: IRouter): Promise<void> {
+    // Reset selections
+    selectedFriends.clear();
+    inviteEmails.clear();
+
+    // Clear inputs
+    const teamNameInput = document.getElementById("team-name-input") as HTMLInputElement;
+    const teamDescInput = document.getElementById("team-description-input") as HTMLTextAreaElement;
+    const projectNameInput = document.getElementById("team-project-name-input") as HTMLInputElement;
+    if (teamNameInput) teamNameInput.value = "";
+    if (teamDescInput) teamDescInput.value = "";
+    if (projectNameInput) projectNameInput.value = "";
+
+    // Load friends list
+    try {
+        const { friendService } = await import("chili-core");
+        const friends = await friendService.getFriends();
+
+        console.log("Loaded friends for team dialog:", friends);
+
+        const friendsList = document.getElementById("friends-selection-list");
+        if (!friendsList) {
+            console.error("Friends list element not found");
+            return;
+        }
+
+        if (friends.length === 0) {
+            friendsList.innerHTML = `
+                <div style="text-align: center; color: #666; padding: 20px; font-size: 13px;">
+                    No friends yet. Add friends to invite them to your team.
+                </div>
+            `;
+        } else {
+            friendsList.innerHTML = "";
+            for (const friend of friends) {
+                const friendItem = document.createElement("label");
+                friendItem.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 8px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                `;
+                friendItem.innerHTML = `
+                    <input type="checkbox" class="friend-checkbox" data-friend-id="${friend.friendId}" data-friend-email="${escapeHtml(friend.friendEmail)}" style="cursor: pointer;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                        ${friend.friendName.charAt(0).toUpperCase()}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="color: white; font-size: 13px; font-weight: 500;">${escapeHtml(friend.friendName)}</div>
+                        <div style="color: #888; font-size: 11px;">${escapeHtml(friend.friendEmail)}</div>
+                    </div>
+                `;
+
+                friendItem.addEventListener("mouseenter", () => {
+                    friendItem.style.background = "rgba(255, 255, 255, 0.05)";
+                });
+                friendItem.addEventListener("mouseleave", () => {
+                    friendItem.style.background = "transparent";
+                });
+
+                const checkbox = friendItem.querySelector(".friend-checkbox") as HTMLInputElement;
+                checkbox.addEventListener("change", () => {
+                    if (checkbox.checked) {
+                        selectedFriends.add(friend.friendId);
+                    } else {
+                        selectedFriends.delete(friend.friendId);
+                    }
+                });
+
+                friendsList.appendChild(friendItem);
+            }
+        }
+    } catch (error) {
+        console.error("Failed to load friends:", error);
+        const friendsList = document.getElementById("friends-selection-list");
+        if (friendsList) {
+            friendsList.innerHTML = `
+                <div style="text-align: center; color: #ff4444; padding: 20px; font-size: 13px;">
+                    Failed to load friends. Please try again.
                 </div>
             `;
         }
     }
+
+    // Load existing projects
+    try {
+        const projects = await projectService.getProjects();
+        const select = document.getElementById("team-existing-project-select") as HTMLSelectElement;
+        if (select) {
+            select.innerHTML =
+                '<option value="" style="background: #1a1a1a; color: white;">Select a project...</option>';
+            for (const project of projects) {
+                const option = document.createElement("option");
+                option.value = project.sessionId;
+                option.textContent = project.projectName;
+                option.style.background = "#1a1a1a";
+                option.style.color = "white";
+                select.appendChild(option);
+            }
+        }
+    } catch (error) {
+        console.error("Failed to load projects:", error);
+    }
 }
 
-function escapeHtml(str: string): string {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
+function addInviteEmailTag(email: string): void {
+    if (inviteEmails.has(email)) {
+        alert("Email already added");
+        return;
+    }
+
+    inviteEmails.add(email);
+
+    const invitesList = document.getElementById("team-invites-list");
+    if (!invitesList) return;
+
+    const tag = document.createElement("div");
+    tag.style.cssText = `
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        background: rgba(59, 130, 246, 0.15);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 6px;
+        color: #3b82f6;
+        font-size: 12px;
+    `;
+    tag.innerHTML = `
+        <span>${escapeHtml(email)}</span>
+        <button style="background: none; border: none; color: #3b82f6; cursor: pointer; padding: 0; font-size: 14px; line-height: 1;">×</button>
+    `;
+
+    const removeBtn = tag.querySelector("button");
+    removeBtn?.addEventListener("click", () => {
+        inviteEmails.delete(email);
+        tag.remove();
+    });
+
+    invitesList.appendChild(tag);
+}
+
+async function handleCreateTeam(router: IRouter): Promise<void> {
+    const teamNameInput = document.getElementById("team-name-input") as HTMLInputElement;
+    const teamDescInput = document.getElementById("team-description-input") as HTMLTextAreaElement;
+    const projectNameInput = document.getElementById("team-project-name-input") as HTMLInputElement;
+    const existingProjectSelect = document.getElementById(
+        "team-existing-project-select",
+    ) as HTMLSelectElement;
+
+    const teamName = teamNameInput?.value.trim();
+    if (!teamName) {
+        alert("Please enter a team name");
+        return;
+    }
+
+    const teamDescription = teamDescInput?.value.trim() || "";
+
+    // Get project option
+    const projectOption = (document.querySelector('input[name="project-option"]:checked') as HTMLInputElement)
+        ?.value;
+    let projectId = "";
+    let projectName = "";
+
+    if (projectOption === "new") {
+        projectName = projectNameInput?.value.trim();
+        if (!projectName) {
+            alert("Please enter a project name");
+            return;
+        }
+    } else {
+        projectId = existingProjectSelect?.value;
+        if (!projectId) {
+            alert("Please select an existing project");
+            return;
+        }
+        projectName = existingProjectSelect?.options[existingProjectSelect.selectedIndex]?.text || "";
+    }
+
+    try {
+        const { teamService, friendService, projectService } = await import("chili-core");
+
+        console.log("Starting team creation...");
+        console.log("Team name:", teamName);
+        console.log("Project option:", projectOption);
+        console.log("Selected friends:", selectedFriends.size);
+        console.log("Invite emails:", inviteEmails.size);
+
+        // Get friend emails
+        const friendEmails: string[] = [];
+        for (const friendId of selectedFriends) {
+            const friends = await friendService.getFriends();
+            const friend = friends.find((f) => f.friendId === friendId);
+            if (friend) {
+                friendEmails.push(friend.friendEmail);
+            }
+        }
+        console.log("Friend emails:", friendEmails);
+
+        // Combine friend emails and invite emails
+        const allInvites = [...friendEmails, ...Array.from(inviteEmails)];
+        console.log("All invites:", allInvites);
+
+        // Create new project if needed
+        if (projectOption === "new") {
+            console.log("Creating new project:", projectName);
+            const newProject = await projectService.createProject(projectName);
+            projectId = newProject.sessionId;
+            console.log("New project created with ID:", projectId);
+        } else {
+            console.log("Using existing project ID:", projectId);
+        }
+
+        // Create team
+        console.log("Creating team...");
+        const team = await teamService.createTeam(teamName, teamDescription);
+        console.log("Team created with ID:", team.id);
+
+        // Add project to team and update project's teamId
+        if (projectId) {
+            console.log("Adding project to team...");
+            await teamService.addProjectToTeam(team.id, projectId);
+
+            // Update project to include teamId
+            const user = auth.currentUser;
+            if (user) {
+                const projectRef = doc(db, "users", user.uid, "projects", projectId);
+                await updateDoc(projectRef, { teamId: team.id });
+            }
+            console.log("Project added to team");
+        }
+
+        // Send invitations
+        console.log("Sending invitations...");
+        for (const email of allInvites) {
+            try {
+                await teamService.inviteToTeam(team.id, email);
+                console.log(`Invitation sent to ${email}`);
+            } catch (error) {
+                console.error(`Failed to invite ${email}:`, error);
+            }
+        }
+
+        // Close dialog
+        const dialog = document.getElementById("create-team-dialog");
+        if (dialog) dialog.style.display = "none";
+
+        // Reload teams
+        loadTeams(router);
+
+        alert(
+            `Team "${teamName}" created successfully!${allInvites.length > 0 ? `\nInvitations sent to ${allInvites.length} people.` : ""}`,
+        );
+    } catch (error) {
+        console.error("Failed to create team - detailed error:", error);
+        console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+        alert(
+            `Failed to create team: ${error instanceof Error ? error.message : "Unknown error"}. Please check console for details.`,
+        );
+    }
 }

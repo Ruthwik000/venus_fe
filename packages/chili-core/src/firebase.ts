@@ -28,7 +28,6 @@ import {
     query,
     serverTimestamp,
     setDoc,
-    type Timestamp,
     updateDoc,
     where,
 } from "firebase/firestore";
@@ -278,20 +277,47 @@ export const authService: AuthService = {
 // Firestore path: users/{uid}/projects/{sessionId}
 // Fields: projectName, sessionId, createdDate, lastModified, fileUrl
 
+export interface ProjectCollaborator {
+    userId: string;
+    email: string;
+    displayName: string;
+    role: "owner" | "editor" | "viewer";
+    addedAt: any; // Firestore Timestamp
+}
+
+export interface ProjectChangeHistory {
+    id: string;
+    userId: string;
+    userEmail: string;
+    userName: string;
+    action: "created" | "modified" | "renamed" | "shared" | "deleted";
+    description: string;
+    fileUrl?: string; // Cloudinary URL if file was changed
+    timestamp: any; // Firestore Timestamp
+}
+
 export interface ProjectData {
     projectName: string;
     sessionId: string;
+    userId: string; // Owner's user ID
     createdDate: any; // Firestore Timestamp
     lastModified: any; // Firestore Timestamp
     fileUrl: string; // Cloudinary URL for the .cd file
+    collaboratorIds?: string[]; // Array of user IDs (for queries)
+    teamId?: string; // Optional team ID if project belongs to a team
 }
 
 export interface ProjectService {
-    createProject: (projectName: string) => Promise<ProjectData>;
+    createProject: (projectName: string, teamId?: string) => Promise<ProjectData>;
     getProjects: () => Promise<ProjectData[]>;
     getProject: (sessionId: string) => Promise<ProjectData | null>;
+    getProjectInfo: (sessionId: string, ownerId: string) => Promise<ProjectData | null>;
     updateProjectFile: (sessionId: string, fileUrl: string) => Promise<void>;
+    updateProjectFileByOwner: (sessionId: string, ownerId: string, fileUrl: string) => Promise<void>;
     updateProjectName: (sessionId: string, newName: string) => Promise<void>;
+    updateProjectNameByOwner: (sessionId: string, ownerId: string, newName: string) => Promise<void>;
+    toggleStarProject: (sessionId: string, starred: boolean) => Promise<void>;
+    getStarredProjects: () => Promise<ProjectData[]>;
     deleteProject: (sessionId: string) => Promise<void>;
 }
 
@@ -304,7 +330,7 @@ function generateSessionId(): string {
 }
 
 export const projectService: ProjectService = {
-    async createProject(projectName: string): Promise<ProjectData> {
+    async createProject(projectName: string, teamId?: string): Promise<ProjectData> {
         const user = auth.currentUser;
         if (!user) throw new Error("User not authenticated");
 
@@ -312,14 +338,38 @@ export const projectService: ProjectService = {
         const projectData: ProjectData = {
             projectName,
             sessionId,
+            userId: user.uid,
             createdDate: serverTimestamp(),
             lastModified: serverTimestamp(),
             fileUrl: "",
+            collaboratorIds: [user.uid],
         };
+
+        if (teamId) {
+            projectData.teamId = teamId;
+        }
 
         // Store at users/{uid}/projects/{sessionId}
         const projectRef = doc(db, "users", user.uid, "projects", sessionId);
         await setDoc(projectRef, projectData);
+
+        // Add owner as first collaborator
+        await projectCollaboratorService.addCollaborator(
+            sessionId,
+            user.uid,
+            user.uid,
+            user.email!,
+            user.displayName || user.email!.split("@")[0],
+            "owner",
+        );
+
+        // Add creation to history
+        await projectHistoryService.addChange(
+            sessionId,
+            user.uid,
+            "created",
+            `Project "${projectName}" created`,
+        );
 
         // Return with a client-side date for immediate use
         return {
@@ -364,11 +414,36 @@ export const projectService: ProjectService = {
         };
     },
 
+    async getProjectInfo(sessionId: string, ownerId: string): Promise<ProjectData | null> {
+        // Get project info from any user (for shared projects)
+        const projectRef = doc(db, "users", ownerId, "projects", sessionId);
+        const snap = await getDoc(projectRef);
+        if (!snap.exists()) return null;
+
+        const data = snap.data() as ProjectData;
+        return {
+            ...data,
+            createdDate: data.createdDate?.toDate?.() ?? new Date(),
+            lastModified: data.lastModified?.toDate?.() ?? new Date(),
+        };
+    },
+
     async updateProjectFile(sessionId: string, fileUrl: string): Promise<void> {
         const user = auth.currentUser;
         if (!user) throw new Error("User not authenticated");
 
         const projectRef = doc(db, "users", user.uid, "projects", sessionId);
+        await updateDoc(projectRef, {
+            fileUrl,
+            lastModified: serverTimestamp(),
+        });
+    },
+
+    async updateProjectFileByOwner(sessionId: string, ownerId: string, fileUrl: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const projectRef = doc(db, "users", ownerId, "projects", sessionId);
         await updateDoc(projectRef, {
             fileUrl,
             lastModified: serverTimestamp(),
@@ -386,6 +461,50 @@ export const projectService: ProjectService = {
         });
     },
 
+    async updateProjectNameByOwner(sessionId: string, ownerId: string, newName: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const projectRef = doc(db, "users", ownerId, "projects", sessionId);
+        await updateDoc(projectRef, {
+            projectName: newName,
+            lastModified: serverTimestamp(),
+        });
+    },
+
+    async toggleStarProject(sessionId: string, starred: boolean): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const projectRef = doc(db, "users", user.uid, "projects", sessionId);
+        await updateDoc(projectRef, {
+            starred: starred,
+            lastModified: serverTimestamp(),
+        });
+    },
+
+    async getStarredProjects(): Promise<ProjectData[]> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const projectsRef = collection(db, "users", user.uid, "projects");
+        const q = query(projectsRef, where("starred", "==", true));
+        const snapshot = await getDocs(q);
+
+        // Sort by lastModified on client side to avoid needing index
+        const projects = snapshot.docs.map((docSnap) => {
+            const data = docSnap.data() as ProjectData;
+            return {
+                ...data,
+                createdDate: data.createdDate?.toDate?.() ?? new Date(),
+                lastModified: data.lastModified?.toDate?.() ?? new Date(),
+            };
+        });
+
+        // Sort by lastModified descending
+        return projects.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime());
+    },
+
     async deleteProject(sessionId: string): Promise<void> {
         const user = auth.currentUser;
         if (!user) throw new Error("User not authenticated");
@@ -395,5 +514,369 @@ export const projectService: ProjectService = {
     },
 };
 
+// ─── Project Collaborators Service ─────────────────────────────────────────
+
+export const projectCollaboratorService = {
+    async addCollaborator(
+        sessionId: string,
+        ownerId: string,
+        userId: string,
+        email: string,
+        displayName: string,
+        role: "owner" | "editor" | "viewer",
+    ): Promise<void> {
+        const collaboratorData: Omit<ProjectCollaborator, "addedAt"> & { addedAt: any } = {
+            userId,
+            email,
+            displayName,
+            role,
+            addedAt: serverTimestamp(),
+        };
+
+        const collaboratorRef = doc(db, "users", ownerId, "projects", sessionId, "collaborators", userId);
+        await setDoc(collaboratorRef, collaboratorData);
+
+        // Update project's collaboratorIds array
+        const projectRef = doc(db, "users", ownerId, "projects", sessionId);
+        const projectSnap = await getDoc(projectRef);
+        if (projectSnap.exists()) {
+            const currentCollaborators = projectSnap.data().collaboratorIds || [];
+            if (!currentCollaborators.includes(userId)) {
+                await updateDoc(projectRef, {
+                    collaboratorIds: [...currentCollaborators, userId],
+                });
+            }
+        }
+    },
+
+    async getCollaborators(sessionId: string, ownerId: string): Promise<ProjectCollaborator[]> {
+        const collaboratorsRef = collection(db, "users", ownerId, "projects", sessionId, "collaborators");
+        const snapshot = await getDocs(collaboratorsRef);
+
+        return snapshot.docs.map((docSnap) => {
+            const data = docSnap.data();
+            return {
+                ...data,
+                addedAt: data.addedAt?.toDate?.() ?? new Date(),
+            } as ProjectCollaborator;
+        });
+    },
+
+    async removeCollaborator(sessionId: string, ownerId: string, userId: string): Promise<void> {
+        const collaboratorRef = doc(db, "users", ownerId, "projects", sessionId, "collaborators", userId);
+        await deleteDoc(collaboratorRef);
+
+        // Update project's collaboratorIds array
+        const projectRef = doc(db, "users", ownerId, "projects", sessionId);
+        const projectSnap = await getDoc(projectRef);
+        if (projectSnap.exists()) {
+            const currentCollaborators = projectSnap.data().collaboratorIds || [];
+            await updateDoc(projectRef, {
+                collaboratorIds: currentCollaborators.filter((id: string) => id !== userId),
+            });
+        }
+    },
+
+    async updateCollaboratorRole(
+        sessionId: string,
+        ownerId: string,
+        userId: string,
+        role: "owner" | "editor" | "viewer",
+    ): Promise<void> {
+        const collaboratorRef = doc(db, "users", ownerId, "projects", sessionId, "collaborators", userId);
+        await updateDoc(collaboratorRef, { role });
+    },
+};
+
+// ─── Project Change History Service ────────────────────────────────────────
+
+export const projectHistoryService = {
+    async addChange(
+        sessionId: string,
+        ownerId: string,
+        action: "created" | "modified" | "renamed" | "shared" | "deleted",
+        description: string,
+        fileUrl?: string,
+    ): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const changeData: Omit<ProjectChangeHistory, "id"> & { timestamp: any } = {
+            userId: user.uid,
+            userEmail: user.email || "",
+            userName: user.displayName || user.email?.split("@")[0] || "Unknown",
+            action,
+            description,
+            timestamp: serverTimestamp(),
+        };
+
+        if (fileUrl) {
+            changeData.fileUrl = fileUrl;
+        }
+
+        const historyRef = collection(db, "users", ownerId, "projects", sessionId, "history");
+        await addDoc(historyRef, changeData);
+    },
+
+    async getHistory(sessionId: string, ownerId: string): Promise<ProjectChangeHistory[]> {
+        const historyRef = collection(db, "users", ownerId, "projects", sessionId, "history");
+        const q = query(historyRef, orderBy("timestamp", "desc"));
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map((docSnap) => {
+            const data = docSnap.data();
+            return {
+                id: docSnap.id,
+                ...data,
+                timestamp: data.timestamp?.toDate?.() ?? new Date(),
+            } as ProjectChangeHistory;
+        });
+    },
+
+    async clearHistory(sessionId: string, ownerId: string): Promise<void> {
+        const historyRef = collection(db, "users", ownerId, "projects", sessionId, "history");
+        const snapshot = await getDocs(historyRef);
+
+        const deletePromises = snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref));
+        await Promise.all(deletePromises);
+    },
+};
+
 export { analytics, auth, db };
 export type { User };
+
+// ─── Friends Service ────────────────────────────────────────────────────
+
+export interface Friend {
+    id: string;
+    userId: string;
+    friendId: string;
+    friendEmail: string;
+    friendName: string;
+    status: "pending" | "accepted" | "rejected";
+    requestedBy: string;
+    createdAt: Date;
+}
+
+export interface FriendRequest {
+    id: string;
+    fromUserId: string;
+    fromEmail: string;
+    fromName: string;
+    toUserId: string;
+    toEmail: string;
+    status: "pending" | "accepted" | "rejected";
+    createdAt: Date;
+}
+
+export const friendService = {
+    async sendFriendRequest(toEmail: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Not authenticated");
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(toEmail)) {
+            throw new Error("Invalid email format");
+        }
+
+        // Don't allow sending request to yourself
+        if (toEmail === user.email) {
+            throw new Error("You cannot send a friend request to yourself");
+        }
+
+        // Check if request already exists (by email)
+        const existingQuery = query(
+            collection(db, "friendRequests"),
+            where("fromUserId", "==", user.uid),
+            where("toEmail", "==", toEmail),
+        );
+        const existing = await getDocs(existingQuery);
+
+        if (!existing.empty) {
+            throw new Error("Friend request already sent to this email");
+        }
+
+        // Check if already friends (by email)
+        const friendsQuery = query(
+            collection(db, "friends"),
+            where("userId", "==", user.uid),
+            where("friendEmail", "==", toEmail),
+        );
+        const friendsSnapshot = await getDocs(friendsQuery);
+
+        if (!friendsSnapshot.empty) {
+            throw new Error("Already friends with this user");
+        }
+
+        // Get current user's name
+        const currentUserName = localStorage.getItem("username") || user.email?.split("@")[0] || "User";
+
+        // Create friend request (we'll match by email when they log in)
+        await addDoc(collection(db, "friendRequests"), {
+            fromUserId: user.uid,
+            fromEmail: user.email,
+            fromName: currentUserName,
+            toUserId: "", // Will be filled when recipient logs in
+            toEmail: toEmail,
+            status: "pending",
+            createdAt: serverTimestamp(),
+        });
+
+        // Create a notification for the recipient (by email)
+        await addDoc(collection(db, "notifications"), {
+            userId: "", // Will be matched by email
+            recipientEmail: toEmail,
+            type: "friend_request",
+            title: "New Friend Request",
+            message: `${currentUserName} sent you a friend request`,
+            read: false,
+            createdAt: serverTimestamp(),
+            metadata: {
+                fromUserId: user.uid,
+                fromEmail: user.email,
+                fromName: currentUserName,
+            },
+        });
+    },
+
+    async getFriendRequests(): Promise<FriendRequest[]> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Not authenticated");
+
+        console.log("Fetching friend requests for:", user.email);
+
+        try {
+            // Simplified query without orderBy to avoid index requirement
+            const q = query(
+                collection(db, "friendRequests"),
+                where("toEmail", "==", user.email),
+                where("status", "==", "pending"),
+            );
+
+            const snapshot = await getDocs(q);
+            console.log("Found friend requests:", snapshot.size);
+
+            // Update toUserId for requests that don't have it yet
+            const updates: Promise<void>[] = [];
+            snapshot.docs.forEach((doc) => {
+                if (!doc.data().toUserId) {
+                    updates.push(updateDoc(doc.ref, { toUserId: user.uid }));
+                }
+            });
+            await Promise.all(updates);
+
+            // Sort by createdAt on client side
+            const requests = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+                createdAt: doc.data().createdAt?.toDate() || new Date(),
+            })) as FriendRequest[];
+
+            requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+            return requests;
+        } catch (error) {
+            console.error("Error fetching friend requests:", error);
+            throw error;
+        }
+    },
+
+    async acceptFriendRequest(requestId: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Not authenticated");
+
+        const requestDoc = await getDoc(doc(db, "friendRequests", requestId));
+        if (!requestDoc.exists()) throw new Error("Request not found");
+
+        const requestData = requestDoc.data();
+
+        // Update request status
+        await updateDoc(doc(db, "friendRequests", requestId), {
+            status: "accepted",
+        });
+
+        // Add to friends collection for both users
+        await addDoc(collection(db, "friends"), {
+            userId: user.uid,
+            friendId: requestData.fromUserId,
+            friendEmail: requestData.fromEmail,
+            friendName: requestData.fromName,
+            status: "accepted",
+            requestedBy: requestData.fromUserId,
+            createdAt: serverTimestamp(),
+        });
+
+        await addDoc(collection(db, "friends"), {
+            userId: requestData.fromUserId,
+            friendId: user.uid,
+            friendEmail: user.email,
+            friendName: localStorage.getItem("username") || user.email?.split("@")[0] || "User",
+            status: "accepted",
+            requestedBy: requestData.fromUserId,
+            createdAt: serverTimestamp(),
+        });
+    },
+
+    async rejectFriendRequest(requestId: string): Promise<void> {
+        await updateDoc(doc(db, "friendRequests", requestId), {
+            status: "rejected",
+        });
+    },
+
+    async getFriends(): Promise<Friend[]> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Not authenticated");
+
+        try {
+            // Simplified query without orderBy to avoid index requirement
+            const q = query(
+                collection(db, "friends"),
+                where("userId", "==", user.uid),
+                where("status", "==", "accepted"),
+            );
+
+            const snapshot = await getDocs(q);
+
+            // Sort by createdAt on client side
+            const friends = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+                createdAt: doc.data().createdAt?.toDate() || new Date(),
+            })) as Friend[];
+
+            friends.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+            return friends;
+        } catch (error) {
+            console.error("Error fetching friends:", error);
+            throw error;
+        }
+    },
+
+    async removeFriend(friendId: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Not authenticated");
+
+        // Remove from both sides
+        const q1 = query(
+            collection(db, "friends"),
+            where("userId", "==", user.uid),
+            where("friendId", "==", friendId),
+        );
+        const snapshot1 = await getDocs(q1);
+        for (const doc of snapshot1.docs) {
+            await deleteDoc(doc.ref);
+        }
+
+        const q2 = query(
+            collection(db, "friends"),
+            where("userId", "==", friendId),
+            where("friendId", "==", user.uid),
+        );
+        const snapshot2 = await getDocs(q2);
+        for (const doc of snapshot2.docs) {
+            await deleteDoc(doc.ref);
+        }
+    },
+};

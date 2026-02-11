@@ -9,6 +9,7 @@ import {
     type ICommand,
     Logger,
     PubSub,
+    projectHistoryService,
     projectService,
 } from "chili-core";
 
@@ -26,7 +27,18 @@ export class SaveDocument implements ICommand {
         }
 
         const sessionId = localStorage.getItem("currentSessionId");
-        Logger.info(`Save command triggered. SessionId: ${sessionId}, Document: ${document.name}`);
+        const ownerId = localStorage.getItem("currentProjectOwnerId");
+
+        Logger.info(
+            `Save command triggered. SessionId: ${sessionId}, OwnerId: ${ownerId}, Document: ${document.name}`,
+        );
+
+        // Debug: Log localStorage contents
+        console.log("=== SAVE DEBUG ===");
+        console.log("sessionId:", sessionId);
+        console.log("ownerId:", ownerId);
+        console.log("document.name:", document.name);
+        console.log("==================");
 
         PubSub.default.pub(
             "showPermanent",
@@ -34,12 +46,13 @@ export class SaveDocument implements ICommand {
                 try {
                     // 1. Save locally (IndexedDB) as before
                     await document.save();
-                    Logger.info("Document saved to IndexedDB");
+                    Logger.info("✓ Document saved to IndexedDB");
 
                     // 2. Upload to Cloudinary & update Firestore if a project session is active
-                    if (sessionId) {
+                    if (sessionId && ownerId) {
                         try {
                             Logger.info("Starting Cloudinary upload...");
+
                             const serialized = document.serialize();
                             const fileContent = JSON.stringify(serialized);
                             Logger.info(`Serialized document size: ${fileContent.length} bytes`);
@@ -50,24 +63,40 @@ export class SaveDocument implements ICommand {
                                 document.name,
                                 sessionId,
                             );
-                            Logger.info(`Uploaded to Cloudinary: ${uploadResult.secure_url}`);
+                            Logger.info(`✓ Uploaded to Cloudinary: ${uploadResult.secure_url}`);
 
-                            // Update Firestore with the Cloudinary URL
-                            await projectService.updateProjectFile(sessionId, uploadResult.secure_url);
-                            await projectService.updateProjectName(sessionId, document.name);
+                            // Update Firestore with the Cloudinary URL (using owner's path)
+                            await projectService.updateProjectFileByOwner(
+                                sessionId,
+                                ownerId,
+                                uploadResult.secure_url,
+                            );
+                            await projectService.updateProjectNameByOwner(sessionId, ownerId, document.name);
+                            Logger.info("✓ Updated Firestore");
 
-                            Logger.info("Project saved to cloud successfully");
+                            // Add to project history
+                            await projectHistoryService.addChange(
+                                sessionId,
+                                ownerId,
+                                "modified",
+                                `Updated project: ${document.name}`,
+                                uploadResult.secure_url,
+                            );
+                            Logger.info("✓ Added to project history");
+
+                            Logger.info("✓✓✓ Project saved to cloud successfully ✓✓✓");
                         } catch (error) {
-                            Logger.error("Cloud save failed (local save succeeded):", error);
+                            Logger.error("✗ Cloud save failed (local save succeeded):", error);
                             console.error("Cloud save error details:", error);
                         }
                     } else {
-                        Logger.warn("No sessionId found - skipping cloud save");
+                        Logger.warn("⚠ No sessionId or ownerId found - skipping cloud save");
+                        console.warn("Missing:", { sessionId, ownerId });
                     }
 
                     PubSub.default.pub("showToast", "toast.document.saved");
                 } catch (error) {
-                    Logger.error("Save failed:", error);
+                    Logger.error("✗ Save failed:", error);
                     console.error("Save error:", error);
                 }
             },

@@ -1,0 +1,268 @@
+.dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    max-width: 90vw;
+    max-height: 80vh;
+    background: #1f1f1f;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    z-index: 10001;
+    overflow: hidden;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.closeButton {
+    background: transparent;
+    border: none;
+    font-size: 28px;
+    color: #888888;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.closeButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.section {
+    padding: 20px 24px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.section:last-child {
+    border-bottom: none;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0e0e0;
+    margin-bottom: 12px;
+}
+
+.linkContainer {
+    display: flex;
+    gap: 8px;
+}
+
+.linkInput {
+    flex: 1;
+    padding: 10px 12px;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 14px;
+    font-family: monospace;
+}
+
+.copyButton {
+    padding: 10px 20px;
+    background: #3b82f6;
+    border: none;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.copyButton:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.hint {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #888888;
+}
+
+.addPeopleContainer {
+    display: flex;
+    gap: 8px;
+}
+
+.input {
+    flex: 1;
+    padding: 10px 12px;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 14px;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.select {
+    padding: 10px 12px;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 140px;
+}
+
+.select:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.addButton {
+    padding: 10px 20px;
+    background: #10b981;
+    border: none;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.addButton:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+.sharesList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shareItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #2a2a2a;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.shareItem:hover {
+    background: #333333;
+}
+
+.shareInfo {
+    flex: 1;
+}
+
+.shareEmail {
+    font-size: 14px;
+    color: #e0e0e0;
+    font-weight: 500;
+}
+
+.sharePermission {
+    font-size: 12px;
+    color: #888888;
+    margin-top: 4px;
+}
+
+.shareActions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.permissionSelect {
+    padding: 6px 10px;
+    background: #1f1f1f;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.removeButton {
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid #ef4444;
+    border-radius: 4px;
+    color: #ef4444;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.removeButton:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666666;
+    font-size: 14px;
+}
+
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    background: #10b981;
+    color: #ffffff;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10002;
+    animation: slideUp 0.3s ease-out;
+}
+
+.toastError {
+    background: #ef4444;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}

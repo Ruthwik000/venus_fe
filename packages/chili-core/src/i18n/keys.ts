@@ -258,6 +258,7 @@ const I18N_KEYS = [
     "toast.cloudSaveFailed",
     "toast.noProjectSession",
     "toast.projectSavedToCloud",
+    "toast.projectUpdated",
     "toast.read.error",
     "toast.uploading",
     "toast.select.noSelected",

@@ -3,6 +3,7 @@
 
 export * from "./application";
 export * from "./cloudinary";
+export * from "./collaboration";
 export * from "./command";
 export * from "./config";
 export * from "./constants";
