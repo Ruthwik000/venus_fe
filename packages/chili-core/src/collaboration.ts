@@ -54,6 +54,16 @@ export interface ProjectShare {
     sharedAt: any;
 }
 
+export interface ChatMessage {
+    id?: string;
+    userId: string;
+    userEmail: string;
+    displayName: string;
+    message: string;
+    timestamp: any;
+    read: boolean;
+}
+
 export interface AccessRequest {
     id: string;
     projectId: string;
@@ -336,9 +346,35 @@ export const shareService = {
         if (!user) throw new Error("User not authenticated");
 
         // Get project info to include in invitation
-        const { projectService } = await import("./firebase");
+        const { projectService, projectCollaboratorService } = await import("./firebase");
         const project = await projectService.getProject(projectId);
         if (!project) throw new Error("Project not found");
+
+        // Ensure owner is added as collaborator (for old projects that don't have it)
+        try {
+            const collaborators = await projectCollaboratorService.getCollaborators(projectId, user.uid);
+            const ownerExists = collaborators.some((c) => c.userId === user.uid);
+            if (!ownerExists) {
+                await projectCollaboratorService.addCollaborator(
+                    projectId,
+                    user.uid,
+                    user.uid,
+                    user.email!,
+                    user.displayName || user.email!.split("@")[0],
+                    "owner",
+                );
+            }
+        } catch (error) {
+            // If collaborators subcollection doesn't exist, add owner
+            await projectCollaboratorService.addCollaborator(
+                projectId,
+                user.uid,
+                user.uid,
+                user.email!,
+                user.displayName || user.email!.split("@")[0],
+                "owner",
+            );
+        }
 
         // Create project invitation instead of immediate share
         await addDoc(collection(db, "projectInvitations"), {
@@ -806,5 +842,58 @@ export const projectSyncService = {
                 }
             }
         });
+    },
+};
+
+// ─── Chat Service ───────────────────────────────────────────────────────────
+
+export const chatService = {
+    async sendMessage(message: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        const chatMessage: Omit<ChatMessage, "id"> = {
+            userId: user.uid,
+            userEmail: user.email!,
+            displayName: user.displayName || user.email!.split("@")[0],
+            message,
+            timestamp: serverTimestamp(),
+            read: false,
+        };
+
+        await addDoc(collection(db, "chatMessages"), chatMessage);
+    },
+
+    subscribeToMessages(callback: (messages: ChatMessage[]) => void): Unsubscribe {
+        const messagesRef = collection(db, "chatMessages");
+        const q = query(messagesRef, orderBy("timestamp", "desc"));
+
+        return onSnapshot(q, (snapshot) => {
+            const messages = snapshot.docs.map((doc) => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    timestamp: data.timestamp?.toDate?.() ?? new Date(),
+                } as ChatMessage;
+            });
+            callback(messages);
+        });
+    },
+
+    async markAsRead(messageId: string): Promise<void> {
+        const messageRef = doc(db, "chatMessages", messageId);
+        await updateDoc(messageRef, { read: true });
+    },
+
+    async getUnreadCount(): Promise<number> {
+        const user = auth.currentUser;
+        if (!user) return 0;
+
+        const messagesRef = collection(db, "chatMessages");
+        const q = query(messagesRef, where("read", "==", false), where("userId", "!=", user.uid));
+        const snapshot = await getDocs(q);
+
+        return snapshot.size;
     },
 };

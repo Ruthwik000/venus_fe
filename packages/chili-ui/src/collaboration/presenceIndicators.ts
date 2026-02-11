@@ -11,14 +11,14 @@ export class PresenceIndicators extends HTMLElement {
     private users: UserPresence[] = [];
     private userColors: Map<string, string> = new Map();
     private colorPalette = [
-        "#3b82f6",
-        "#10b981",
-        "#f59e0b",
-        "#ef4444",
-        "#8b5cf6",
-        "#ec4899",
-        "#06b6d4",
-        "#84cc16",
+        "#2d2d2d",
+        "#3a3a3a",
+        "#4a4a4a",
+        "#5a5a5a",
+        "#6a6a6a",
+        "#7a7a7a",
+        "#8a8a8a",
+        "#9a9a9a",
     ];
 
     constructor(private projectId: string) {

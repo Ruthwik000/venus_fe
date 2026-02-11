@@ -100,12 +100,26 @@ export function setupRoutes(app: IApplication): Router {
     });
 
     // Dashboard route (requires authentication)
-    router.addRoute("/dashboard", (_match: RouteMatch) => {
+    router.addRoute("/dashboard", async (_match: RouteMatch) => {
         Logger.info("Navigated to dashboard");
         if (!isAuthenticated()) {
             Logger.warn("User not authenticated, redirecting to login");
             router.navigate("/login");
             return;
+        }
+
+        // Wait for Firebase auth to complete
+        const { auth } = await import("chili-core");
+        if (!auth.currentUser) {
+            Logger.info("Waiting for Firebase auth to complete...");
+            await new Promise<void>((resolve) => {
+                const unsubscribe = auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        unsubscribe();
+                        resolve();
+                    }
+                });
+            });
         }
 
         // Cleanup real-time sync when leaving editor

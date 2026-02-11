@@ -1660,18 +1660,18 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #2d2d2d;
+    border: 1px solid #404040;
     border-radius: 0.5rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: #a0a0a0;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .header-icon-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border-color: rgba(255, 255, 255, 0.2);
+    background: #3a3a3a;
+    color: #ffffff;
+    border-color: #505050;
 }
 
 .header-user {
@@ -1697,9 +1697,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #2d2d2d;
+    border: 1px solid #404040;
     border-radius: 0.375rem;
-    color: white;
+    color: #ffffff;
     font-weight: 600;
     font-size: 0.875rem;
 }

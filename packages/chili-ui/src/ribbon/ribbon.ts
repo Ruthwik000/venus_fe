@@ -249,6 +249,14 @@ export class Ribbon extends HTMLElement {
             onclick: () => PubSub.default.pub("openShareDialog", true),
         });
 
+        // Add Chat button
+        const chatButton = div({
+            className: style.shareButton,
+            title: "Chat with Collaborators",
+            textContent: "Chat",
+            onclick: () => PubSub.default.pub("openChatDialog", true),
+        });
+
         // Add Presence Indicators (will be populated by editor)
         const presenceContainer = div({ id: "presence-indicators", className: style.presenceContainer });
 
@@ -258,6 +266,7 @@ export class Ribbon extends HTMLElement {
         return div(
             { className: style.right },
             shareButton,
+            chatButton,
             presenceContainer,
             layoutToggles,
             notificationCenter,
