@@ -140,11 +140,6 @@ export class Ribbon extends HTMLElement {
             span({ id: "appName", textContent: `Venus - v${__APP_VERSION__}` }),
             div(
                 { className: style.ribbonTitlePanel },
-                svg({
-                    className: style.home,
-                    icon: "icon-home",
-                    onclick: () => PubSub.default.pub("displayHome", true),
-                }),
                 collection({
                     className: style.quickCommands,
                     sources: this.dataContent.quickCommands,
