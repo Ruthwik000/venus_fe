@@ -1977,10 +1977,10 @@ async function openTeamManagement(team: any): Promise<void> {
         try {
             // Get user's projects
             const projects = await projectService.getProjects();
-            
+
             // Filter out projects already in the team
-            const availableProjects = projects.filter(p => !team.projectIds.includes(p.sessionId));
-            
+            const availableProjects = projects.filter((p) => !team.projectIds.includes(p.sessionId));
+
             if (availableProjects.length === 0) {
                 alert("No available projects to add. All your projects are already in this team.");
                 return;
@@ -1988,10 +1988,12 @@ async function openTeamManagement(team: any): Promise<void> {
 
             // Create a simple selection dialog
             const projectNames = availableProjects.map((p, i) => `${i + 1}. ${p.projectName}`).join("\n");
-            const selection = prompt(`Select a project to add to the team:\n\n${projectNames}\n\nEnter the number:`);
-            
+            const selection = prompt(
+                `Select a project to add to the team:\n\n${projectNames}\n\nEnter the number:`,
+            );
+
             if (!selection) return;
-            
+
             const index = parseInt(selection) - 1;
             if (isNaN(index) || index < 0 || index >= availableProjects.length) {
                 alert("Invalid selection");
@@ -1999,20 +2001,20 @@ async function openTeamManagement(team: any): Promise<void> {
             }
 
             const selectedProject = availableProjects[index];
-            
+
             // Add project to team
             const { teamService } = await import("chili-core");
             await teamService.addProjectToTeam(team.id, selectedProject.sessionId);
-            
+
             // Update project's teamId
             const user = auth.currentUser;
             if (user) {
                 const projectRef = doc(db, "users", user.uid, "projects", selectedProject.sessionId);
                 await updateDoc(projectRef, { teamId: team.id });
             }
-            
+
             alert(`Project "${selectedProject.projectName}" added to team successfully!`);
-            
+
             // Reload projects list
             await loadTeamProjects(team);
         } catch (error) {
@@ -2202,13 +2204,16 @@ async function loadTeamProjects(team: any): Promise<void> {
                     try {
                         const { projectHistoryService } = await import("chili-core");
                         console.log("Loading history for project:", projectId, "owner:", project.userId);
-                        
+
                         let history = [];
                         try {
                             history = await projectHistoryService.getHistory(projectId, project.userId);
                             console.log("History loaded:", history.length, "entries");
                         } catch (historyError) {
-                            console.warn("Could not load history (subcollection may not exist):", historyError);
+                            console.warn(
+                                "Could not load history (subcollection may not exist):",
+                                historyError,
+                            );
                             // History subcollection doesn't exist yet - this is normal for new projects
                         }
 
@@ -2266,7 +2271,7 @@ async function loadTeamProjects(team: any): Promise<void> {
                                     </div>
                                 </div>
                                 <div style="color: #ccc; font-size: 11px; margin-bottom: 4px;">${escapeHtml(change.description)}</div>
-                                <div style="color: #666; font-size: 10px;">${timestamp}${hasFileUrl ? ' • Snapshot saved' : ''}</div>
+                                <div style="color: #666; font-size: 10px;">${timestamp}${hasFileUrl ? " • Snapshot saved" : ""}</div>
                             `;
 
                             // Add view version button handler
@@ -2277,7 +2282,11 @@ async function loadTeamProjects(team: any): Promise<void> {
                                     const fileUrl = (e.target as HTMLElement).getAttribute("data-file-url");
                                     if (fileUrl) {
                                         // Open the version in a new tab or download it
-                                        if (confirm("Do you want to download this version or view it?\n\nOK = Download\nCancel = View in new tab")) {
+                                        if (
+                                            confirm(
+                                                "Do you want to download this version or view it?\n\nOK = Download\nCancel = View in new tab",
+                                            )
+                                        ) {
                                             // Download
                                             const link = document.createElement("a");
                                             link.href = fileUrl;

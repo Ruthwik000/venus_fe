@@ -10,203 +10,234 @@ export function renderLanding(_app: IApplication, router: IRouter): void {
     container.style.cssText = "";
 
     const page = document.createElement("div");
-    page.className = "landing-page-hero";
+    page.className = "synthetic-hero";
     page.innerHTML = `
-        <!-- Navbar -->
-        <nav class="hero-navbar">
-            <div class="hero-nav-container">
-                <div class="hero-nav-left">
-                    <span class="hero-brand">Venus</span>
-                </div>
-                <div class="hero-nav-right">
-                    <button id="hero-login-btn" class="hero-nav-link">Sign In</button>
-                    <button id="hero-signup-btn" class="hero-btn-primary">Start Free Trial</button>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Hero Section -->
-        <div class="hero-content-wrapper">
-            <div class="hero-background">
-                <canvas id="spline-canvas"></canvas>
-                <div class="hero-gradient-overlay"></div>
+        <canvas id="shader-canvas" class="shader-canvas"></canvas>
+        
+        <div class="hero-content-center">
+            <div class="hero-badge">
+                <span class="badge-label">EXPERIENCE</span>
+                <span class="badge-dot"></span>
+                <span class="badge-text">Venus</span>
             </div>
             
-            <div class="hero-content">
-                <div class="hero-text-container">
-                    <h1 class="hero-title">
-                        Design the Future with<br />
-                        Professional 3D CAD
-                    </h1>
-                    <p class="hero-description">
-                        Professional-grade 3D modeling powered by OpenCascade and WebAssembly.<br />
-                        Create complex geometries, parametric designs, and engineering-ready models—all in your browser.
-                    </p>
-                    <div class="hero-buttons">
-                        <button id="hero-cta-trial" class="hero-btn-cta">Start Free Trial</button>
-                        <button id="hero-cta-demo" class="hero-btn-secondary">
-                            <svg class="hero-play-icon" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                            </svg>
-                            Watch Demo
-                        </button>
-                    </div>
-                </div>
+            <h1 class="hero-title">
+                <span class="title-line">Design the Future with</span>
+                <span class="title-line">Professional 3D Modeling</span>
+            </h1>
+            
+            <p class="hero-description">
+                Experience next-generation CAD powered by OpenCascade and WebAssembly.<br />
+                Create complex geometries, parametric designs, and engineering-ready models—all in your browser.
+            </p>
+            
+            <div class="hero-cta-buttons">
+                <button id="hero-signup-btn" class="hero-btn-primary">Start Free Trial</button>
+                <button id="hero-login-btn" class="hero-btn-outline">Sign In</button>
             </div>
-        </div>
-
-        <!-- Screenshot Section -->
-        <div class="hero-screenshot-section">
-            <div class="hero-screenshot-container">
-                <img 
-                    src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1920&h=1080&fit=crop&q=80" 
-                    alt="Venus Interface" 
-                    class="hero-screenshot"
-                />
-            </div>
-        </div>
-
-        <!-- Features Section -->
-        <div class="hero-features-section">
-            <div class="hero-features-grid">
-                <div class="hero-feature-card">
-                    <div class="hero-feature-icon">�</div>
-                    <h3>Parametric Modeling</h3>
-                    <p>Create intelligent, constraint-based models that update automatically when parameters change</p>
-                </div>
-                <div class="hero-feature-card">
-                    <div class="hero-feature-icon">⚡</div>
-                    <h3>WebAssembly Powered</h3>
-                    <p>Desktop-class performance with OpenCascade technology running natively in your browser</p>
-                </div>
-                <div class="hero-feature-card">
-                    <div class="hero-feature-icon">☁️</div>
-                    <h3>Cloud Collaboration</h3>
-                    <p>Work together in real-time, share designs, and access your projects from anywhere</p>
-                </div>
-            </div>
+            
+            <ul class="hero-micro-details">
+                <li><span class="micro-dot"></span>Parametric modeling engine</li>
+                <li><span class="micro-dot"></span>Real-time collaboration</li>
+                <li><span class="micro-dot"></span>Cloud-native architecture</li>
+            </ul>
         </div>
     `;
 
     container.appendChild(page);
 
-    // Initialize Spline background
-    initSplineBackground();
+    // Initialize shader background
+    initShaderBackground();
+
+    // Add animations
+    animateHeroElements();
 
     // Event handlers
-    document.getElementById("hero-login-btn")?.addEventListener("click", () => {
-        router.navigate("/login");
-    });
-
     document.getElementById("hero-signup-btn")?.addEventListener("click", () => {
         router.navigate("/signup");
     });
 
-    document.getElementById("hero-cta-trial")?.addEventListener("click", () => {
-        router.navigate("/signup");
-    });
-
-    document.getElementById("hero-cta-demo")?.addEventListener("click", () => {
+    document.getElementById("hero-login-btn")?.addEventListener("click", () => {
         router.navigate("/login");
     });
 }
 
-function initSplineBackground(): void {
-    const canvas = document.getElementById("spline-canvas") as HTMLCanvasElement;
+function initShaderBackground(): void {
+    const canvas = document.getElementById("shader-canvas") as HTMLCanvasElement;
     if (!canvas) return;
 
-    // Use dynamic import for Spline
-    import("@splinetool/runtime")
-        .then((module) => {
-            const spline = new module.Application(canvas);
-            spline.load("https://prod.spline.design/us3ALejTXl6usHZ7/scene.splinecode");
-        })
-        .catch((error) => {
-            console.error("Failed to load Spline scene:", error);
-            // Fallback to particle background if Spline fails
-            initFallbackBackground();
-        });
-}
-
-function initFallbackBackground(): void {
-    const canvas = document.getElementById("spline-canvas") as HTMLCanvasElement;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const gl = canvas.getContext("webgl");
+    if (!gl) return;
 
     // Set canvas size
     const resizeCanvas = () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        gl.viewport(0, 0, canvas.width, canvas.height);
     };
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
-    // Particle system
-    const particles: Array<{
-        x: number;
-        y: number;
-        vx: number;
-        vy: number;
-        size: number;
-    }> = [];
+    // Vertex shader
+    const vertexShaderSource = `
+        attribute vec2 position;
+        void main() {
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    `;
 
-    // Create particles
-    for (let i = 0; i < 200; i++) {
-        particles.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * 1.2,
-            vy: (Math.random() - 0.5) * 1.2,
-            size: Math.random() * 4 + 1.5,
-        });
-    }
+    // Fragment shader with animated pattern
+    const fragmentShaderSource = `
+        precision highp float;
+        uniform float u_time;
+        uniform vec2 u_resolution;
+
+        vec2 toPolar(vec2 p) {
+            float r = length(p);
+            float a = atan(p.y, p.x);
+            return vec2(r, a);
+        }
+
+        void main() {
+            vec2 p = 6.0 * ((gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y);
+            vec2 polar = toPolar(p);
+            float r = polar.x;
+            
+            vec2 i = p;
+            float c = 0.0;
+            float rot = r + u_time + p.x * 0.1;
+            
+            for (float n = 0.0; n < 4.0; n++) {
+                float rr = r + 0.15 * sin(u_time * 0.7 + n + r * 2.0);
+                p *= mat2(cos(rot - sin(u_time / 10.0)), sin(rot),
+                         -sin(cos(rot) - u_time / 10.0), cos(rot)) * -0.25;
+                float t = r - u_time / (n + 30.0);
+                i -= p + sin(t - i.y) + rr;
+                c += 2.2 / length(vec2((sin(i.x + t) / 0.15), (cos(i.y + t) / 0.15)));
+            }
+            
+            c /= 8.0;
+            vec3 baseColor = vec3(0.2, 0.7, 0.5);
+            vec3 finalColor = baseColor * smoothstep(0.0, 1.0, c * 0.6);
+            gl_FragColor = vec4(finalColor, 1.0);
+        }
+    `;
+
+    // Compile shaders
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    if (!vertexShader) return;
+    gl.shaderSource(vertexShader, vertexShaderSource);
+    gl.compileShader(vertexShader);
+
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    if (!fragmentShader) return;
+    gl.shaderSource(fragmentShader, fragmentShaderSource);
+    gl.compileShader(fragmentShader);
+
+    // Create program
+    const program = gl.createProgram();
+    if (!program) return;
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    // Set up geometry
+    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+    const positionLocation = gl.getAttribLocation(program, "position");
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+    // Get uniform locations
+    const timeLocation = gl.getUniformLocation(program, "u_time");
+    const resolutionLocation = gl.getUniformLocation(program, "u_resolution");
 
     // Animation loop
-    function animate() {
-        if (!ctx || !canvas) return;
+    const startTime = Date.now();
+    function render() {
+        const currentTime = (Date.now() - startTime) * 0.001 * 0.5;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        gl.uniform1f(timeLocation, currentTime);
+        gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
 
-        // Update and draw particles
-        particles.forEach((particle) => {
-            particle.x += particle.vx;
-            particle.y += particle.vy;
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        requestAnimationFrame(render);
+    }
+    render();
+}
 
-            // Wrap around edges
-            if (particle.x < 0) particle.x = canvas.width;
-            if (particle.x > canvas.width) particle.x = 0;
-            if (particle.y < 0) particle.y = canvas.height;
-            if (particle.y > canvas.height) particle.y = 0;
-
-            // Draw particle
-            ctx.fillStyle = "rgba(130, 0, 219, 0.6)";
-            ctx.beginPath();
-            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        // Draw connections
-        particles.forEach((p1, i) => {
-            particles.slice(i + 1).forEach((p2) => {
-                const dx = p1.x - p2.x;
-                const dy = p1.y - p2.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < 180) {
-                    ctx.strokeStyle = `rgba(130, 0, 219, ${0.25 * (1 - distance / 180)})`;
-                    ctx.lineWidth = 1.5;
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.stroke();
-                }
-            });
-        });
-
-        requestAnimationFrame(animate);
+function animateHeroElements(): void {
+    // Animate badge
+    const badge = document.querySelector(".hero-badge") as HTMLElement;
+    if (badge) {
+        badge.style.opacity = "0";
+        badge.style.transform = "translateY(-8px)";
+        setTimeout(() => {
+            badge.style.transition = "all 0.5s ease-out";
+            badge.style.opacity = "1";
+            badge.style.transform = "translateY(0)";
+        }, 100);
     }
 
-    animate();
+    // Animate title lines
+    const titleLines = document.querySelectorAll(".title-line");
+    titleLines.forEach((line, index) => {
+        const el = line as HTMLElement;
+        el.style.opacity = "0";
+        el.style.transform = "translateY(24px) scale(1.04)";
+        el.style.filter = "blur(16px)";
+        setTimeout(
+            () => {
+                el.style.transition = "all 0.9s ease-out";
+                el.style.opacity = "1";
+                el.style.transform = "translateY(0) scale(1)";
+                el.style.filter = "blur(0)";
+            },
+            200 + index * 120,
+        );
+    });
+
+    // Animate description
+    const description = document.querySelector(".hero-description") as HTMLElement;
+    if (description) {
+        description.style.opacity = "0";
+        description.style.transform = "translateY(8px)";
+        setTimeout(() => {
+            description.style.transition = "all 0.5s ease-out";
+            description.style.opacity = "1";
+            description.style.transform = "translateY(0)";
+        }, 600);
+    }
+
+    // Animate buttons
+    const buttons = document.querySelector(".hero-cta-buttons") as HTMLElement;
+    if (buttons) {
+        buttons.style.opacity = "0";
+        buttons.style.transform = "translateY(8px)";
+        setTimeout(() => {
+            buttons.style.transition = "all 0.5s ease-out";
+            buttons.style.opacity = "1";
+            buttons.style.transform = "translateY(0)";
+        }, 750);
+    }
+
+    // Animate micro details
+    const microItems = document.querySelectorAll(".hero-micro-details li");
+    microItems.forEach((item, index) => {
+        const el = item as HTMLElement;
+        el.style.opacity = "0";
+        el.style.transform = "translateY(6px)";
+        setTimeout(
+            () => {
+                el.style.transition = "all 0.5s ease-out";
+                el.style.opacity = "1";
+                el.style.transform = "translateY(0)";
+            },
+            900 + index * 100,
+        );
+    });
 }
