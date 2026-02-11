@@ -138,6 +138,28 @@
         margin: 2px 8px;
         flex: 0 0 auto;
 
+        .shareButton {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .shareButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .presenceContainer {
+            display: flex;
+            align-items: center;
+        }
+
         .layoutToggles {
             display: flex;
             flex-direction: row;

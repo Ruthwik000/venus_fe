@@ -1,0 +1,79 @@
+.container {
+    display: flex;
+    align-items: center;
+    gap: -8px;
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #1f1f1f;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s;
+    margin-left: -8px;
+}
+
+.avatar:first-child {
+    margin-left: 0;
+}
+
+.avatar:hover {
+    transform: translateY(-2px) scale(1.1);
+    z-index: 10;
+}
+
+.initials {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.activeIndicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    background: #10b981;
+    border: 2px solid #1f1f1f;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+.countBadge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #3a3a3a;
+    border: 2px solid #1f1f1f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e0e0e0;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: -8px;
+    cursor: pointer;
+}
+
+.countBadge:hover {
+    background: #4a4a4a;
+}

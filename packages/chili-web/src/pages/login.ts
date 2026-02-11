@@ -168,7 +168,18 @@ export function renderLogin(_app: IApplication, router: IRouter): void {
             localStorage.setItem("isAuthenticated", "true");
             localStorage.setItem("username", user.displayName || email.split("@")[0]);
             localStorage.setItem("userEmail", user.email || "");
-            router.navigate("/dashboard");
+
+            // Check for redirect parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirect = urlParams.get("redirect");
+
+            if (redirect) {
+                // Redirect to the original URL
+                router.navigate(decodeURIComponent(redirect));
+            } else {
+                // Default to dashboard
+                router.navigate("/dashboard");
+            }
         } catch (error: unknown) {
             console.error("Login failed:", error);
             const errorMessage =

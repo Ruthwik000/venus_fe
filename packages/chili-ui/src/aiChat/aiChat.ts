@@ -114,48 +114,11 @@ export class AIChatPanel extends HTMLElement {
     }
 
     private connectWebSocket() {
-        const wsUrl = `ws://localhost:8000/ws/chat/${this.sessionId}`;
-        Logger.info("Connecting to WebSocket:", wsUrl);
-
-        try {
-            this.ws = new WebSocket(wsUrl);
-
-            this.ws.onopen = () => {
-                Logger.info("WebSocket connected");
-                this.wsConnected = true;
-                this.updateConnectionStatus(true);
-            };
-
-            this.ws.onclose = () => {
-                Logger.info("WebSocket disconnected");
-                this.wsConnected = false;
-                this.updateConnectionStatus(false);
-                // Attempt to reconnect after 2 seconds
-                setTimeout(() => this.connectWebSocket(), 2000);
-            };
-
-            this.ws.onerror = (error) => {
-                Logger.error("WebSocket error:", error);
-                this.addMessage({
-                    role: "assistant",
-                    content:
-                        "❌ Connection error. Make sure the backend server is running on http://localhost:8000",
-                });
-            };
-
-            this.ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    this.handleWebSocketMessage(data);
-                } catch (error) {
-                    Logger.error("Error parsing WebSocket message:", error);
-                }
-            };
-        } catch (error) {
-            Logger.error("Failed to create WebSocket:", error);
-            this.wsConnected = false;
-            this.updateConnectionStatus(false);
-        }
+        // WebSocket disabled - backend server not configured
+        // TODO: Implement with Ably or custom backend when needed
+        this.wsConnected = false;
+        this.updateConnectionStatus(false);
+        return;
     }
 
     private updateConnectionStatus(connected: boolean) {

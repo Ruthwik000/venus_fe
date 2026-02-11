@@ -29,6 +29,9 @@ export class SaveProjectToCloud implements ICommand {
             return;
         }
 
+        // Get the project owner ID (for shared projects, this is the original owner)
+        const projectOwnerId = localStorage.getItem("currentProjectOwnerId");
+
         PubSub.default.pub(
             "showPermanent",
             async () => {
@@ -48,12 +51,27 @@ export class SaveProjectToCloud implements ICommand {
                     Logger.info(`Project uploaded to Cloudinary: ${uploadResult.secure_url}`);
 
                     // 3. Update Firestore with the new Cloudinary URL and timestamp
-                    await projectService.updateProjectFile(sessionId, uploadResult.secure_url);
+                    // If we have an owner ID (shared project), update the owner's project
+                    // Otherwise, update our own project
+                    if (projectOwnerId) {
+                        Logger.info(`Updating shared project owned by: ${projectOwnerId}`);
+                        await projectService.updateProjectFileByOwner(
+                            sessionId,
+                            projectOwnerId,
+                            uploadResult.secure_url,
+                        );
+                        await projectService.updateProjectNameByOwner(
+                            sessionId,
+                            projectOwnerId,
+                            document.name,
+                        );
+                    } else {
+                        Logger.info("Updating own project");
+                        await projectService.updateProjectFile(sessionId, uploadResult.secure_url);
+                        await projectService.updateProjectName(sessionId, document.name);
+                    }
 
-                    // 4. Also update the project name in case it changed
-                    await projectService.updateProjectName(sessionId, document.name);
-
-                    // 5. Also save locally (IndexedDB) as before
+                    // 4. Also save locally (IndexedDB) as before
                     await document.save();
 
                     PubSub.default.pub("showToast", "toast.projectSavedToCloud");

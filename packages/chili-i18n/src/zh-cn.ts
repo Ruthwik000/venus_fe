@@ -263,6 +263,7 @@ export default {
         "toast.cloudSaveFailed": "保存到云端失败",
         "toast.noProjectSession": "没有项目会话。请先从仪表板创建项目。",
         "toast.projectSavedToCloud": "项目已成功保存到云端",
+        "toast.projectUpdated": "协作者已更新项目",
         "toast.read.error": "读取错误",
         "toast.uploading": "正在上传到云端...",
         "toast.select.noSelected": "未选择任何对象",

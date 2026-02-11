@@ -1494,9 +1494,11 @@ body {
 .modern-dashboard {
     display: flex;
     min-height: 100vh;
+    height: 100vh;
     width: 100%;
     background: #0a0a0a;
     color: white;
+    overflow: hidden;
 }
 
 /* Sidebar */
@@ -1512,8 +1514,9 @@ body {
     position: fixed;
     left: 0;
     top: 0;
-    bottom: 0;
+    height: 100vh;
     z-index: 100;
+    overflow-y: auto;
 }
 
 .sidebar-brand {
@@ -1604,7 +1607,16 @@ body {
     margin-left: 260px;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Tab Content */
+.tab-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
 }
 
 /* Header */

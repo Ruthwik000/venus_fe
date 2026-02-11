@@ -6,6 +6,7 @@ import { renderDashboard } from "./pages/dashboard";
 import { renderEditor } from "./pages/editor";
 import { renderLanding } from "./pages/landing";
 import { renderLogin } from "./pages/login";
+import { renderRequestAccess } from "./pages/request-access";
 import { renderSignup } from "./pages/signup";
 import { renderTestEmail } from "./pages/test-email";
 import { renderVerifyEmail } from "./pages/verify-email";
@@ -107,6 +108,14 @@ export function setupRoutes(app: IApplication): Router {
             return;
         }
 
+        // Cleanup real-time sync when leaving editor
+        try {
+            const { cleanupRealtimeSync } = require("./pages/editor");
+            cleanupRealtimeSync();
+        } catch (error) {
+            // Ignore if cleanup function doesn't exist
+        }
+
         // Hide Chili3D UI elements
         const chiliUIElements = (app as unknown as { chiliUIElements?: HTMLElement[] }).chiliUIElements;
         if (chiliUIElements) {
@@ -118,13 +127,102 @@ export function setupRoutes(app: IApplication): Router {
         renderDashboard(app, router);
     });
 
+    // Request access route
+    router.addRoute("/request-access", async (_match: RouteMatch) => {
+        Logger.info("Navigated to request access page");
+
+        // Hide Chili3D UI elements
+        const chiliUIElements = (app as unknown as { chiliUIElements?: HTMLElement[] }).chiliUIElements;
+        if (chiliUIElements) {
+            for (const el of chiliUIElements) {
+                el.style.display = "none";
+            }
+        }
+
+        await renderRequestAccess(router);
+    });
+
     // Editor route - show original Chili3D interface
     router.addRoute("/editor", async (_match: RouteMatch) => {
         Logger.info("Opening editor");
-        if (!isAuthenticated()) {
+
+        // Wait for Firebase auth to initialize
+        const { auth } = await import("chili-core");
+        await new Promise<void>((resolve) => {
+            if (auth.currentUser) {
+                resolve();
+            } else {
+                const unsubscribe = auth.onAuthStateChanged((user) => {
+                    unsubscribe();
+                    resolve();
+                });
+            }
+        });
+
+        if (!isAuthenticated() || !auth.currentUser) {
             Logger.warn("User not authenticated, redirecting to login");
-            router.navigate("/login");
+            // Get sessionId from URL to preserve it
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get("sessionId") || urlParams.get("session");
+            if (sessionId) {
+                router.navigate(`/login?redirect=${encodeURIComponent(`/editor?sessionId=${sessionId}`)}`);
+            } else {
+                router.navigate("/login");
+            }
             return;
+        }
+
+        // Check if user has access to the project
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get("sessionId") || urlParams.get("session");
+        const ownerId = urlParams.get("owner");
+        const projectName = urlParams.get("name");
+
+        if (sessionId) {
+            try {
+                const { shareService, projectService } = await import("chili-core");
+                const user = auth.currentUser;
+
+                if (user) {
+                    // Check if user owns the project
+                    let hasAccess = false;
+                    let isOwner = false;
+
+                    try {
+                        const project = await projectService.getProject(sessionId);
+                        if (project) {
+                            // User owns this project
+                            hasAccess = true;
+                            isOwner = true;
+                            Logger.info("User is the project owner");
+                        }
+                    } catch (error) {
+                        Logger.info("Project not found in user's projects, checking shares...");
+                    }
+
+                    // If not owner, check if project is shared with user
+                    if (!isOwner) {
+                        const shares = await shareService.getSharedProjects();
+                        hasAccess = shares.some((share) => share.projectId === sessionId);
+                        if (hasAccess) {
+                            Logger.info("User has shared access to project");
+                        }
+                    }
+
+                    // If no access, redirect to request access page with all parameters
+                    if (!hasAccess) {
+                        Logger.warn("User does not have access to this project");
+                        const params = [`sessionId=${sessionId}`];
+                        if (ownerId) params.push(`owner=${ownerId}`);
+                        if (projectName) params.push(`name=${projectName}`);
+                        const redirectUrl = `/request-access?${params.join("&")}`;
+                        router.navigate(redirectUrl);
+                        return;
+                    }
+                }
+            } catch (error) {
+                Logger.error("Failed to check project access:", error);
+            }
         }
 
         const container = document.getElementById("app") || document.body;

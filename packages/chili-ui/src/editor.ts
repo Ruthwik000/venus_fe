@@ -14,6 +14,7 @@ import {
     type RibbonTab,
 } from "chili-core";
 import { AIChatPanel } from "./aiChat";
+import { CommentsPanel, PresenceIndicators, ShareDialog } from "./collaboration";
 import style from "./editor.module.css";
 import { OKCancel } from "./okCancel";
 import { ProjectView } from "./project";
@@ -36,6 +37,9 @@ export class Editor extends HTMLElement {
     private _isSidebarVisible: boolean = true;
     private _aiChatPanel: AIChatPanel | null = null;
     private _isAIChatVisible: boolean = false;
+    private _commentsPanel: CommentsPanel | null = null;
+    private _presenceIndicators: PresenceIndicators | null = null;
+    private _currentProjectId: string | null = null;
 
     constructor(
         readonly app: IApplication,
@@ -52,6 +56,11 @@ export class Editor extends HTMLElement {
             viewport,
         );
         this.clearSelectionControl();
+
+        // Get project ID from URL (check both 'session' and 'sessionId' for compatibility)
+        const urlParams = new URLSearchParams(window.location.search);
+        this._currentProjectId = urlParams.get("session") || urlParams.get("sessionId");
+
         this.render();
     }
 
@@ -73,6 +82,14 @@ export class Editor extends HTMLElement {
         this._aiChatPanel = new AIChatPanel(this.app);
         this._aiChatPanel.style.display = "none";
 
+        // Create comments panel if we have a project ID
+        if (this._currentProjectId) {
+            this._commentsPanel = new CommentsPanel(this._currentProjectId);
+            this._commentsPanel.style.display = "none";
+            this._commentsPanel.style.width = "400px";
+            this._commentsPanel.style.borderLeft = "1px solid #2a2a2a";
+        }
+
         this.append(
             div(
                 { className: style.root },
@@ -81,12 +98,22 @@ export class Editor extends HTMLElement {
                     { className: style.content },
                     this._sidebarEl,
                     this._viewportContainer,
+                    this._commentsPanel || div(),
                     this._aiChatPanel,
                 ),
                 new Statusbar(style.statusbar),
             ),
         );
         this.app.mainWindow?.appendChild(this);
+
+        // Add presence indicators to ribbon if we have a project ID
+        if (this._currentProjectId) {
+            this._presenceIndicators = new PresenceIndicators(this._currentProjectId);
+            const presenceContainer = document.getElementById("presence-indicators");
+            if (presenceContainer) {
+                presenceContainer.appendChild(this._presenceIndicators);
+            }
+        }
     }
 
     private _startSidebarResize(e: MouseEvent) {
@@ -120,6 +147,7 @@ export class Editor extends HTMLElement {
         PubSub.default.sub("clearSelectionControl", this.clearSelectionControl);
         PubSub.default.sub("toggleLeftSidebar", this._toggleSidebar);
         PubSub.default.sub("toggleAIChat", this._toggleAIChat);
+        PubSub.default.sub("openShareDialog", this._openShareDialog);
     }
 
     disconnectedCallback(): void {
@@ -128,7 +156,37 @@ export class Editor extends HTMLElement {
         PubSub.default.remove("clearSelectionControl", this.clearSelectionControl);
         PubSub.default.remove("toggleLeftSidebar", this._toggleSidebar);
         PubSub.default.remove("toggleAIChat", this._toggleAIChat);
+        PubSub.default.remove("openShareDialog", this._openShareDialog);
     }
+
+    private readonly _openShareDialog = async () => {
+        if (!this._currentProjectId) {
+            alert("No project loaded");
+            return;
+        }
+
+        const projectName = localStorage.getItem("currentProjectName") || "Untitled Project";
+
+        // Get current user ID as owner
+        const { auth } = await import("chili-core");
+        const ownerId = auth.currentUser?.uid;
+
+        const dialog = new ShareDialog(this._currentProjectId, projectName, ownerId);
+
+        // Create backdrop
+        const backdrop = div({
+            style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 9998; display: flex; align-items: center; justify-content: center;",
+        });
+
+        backdrop.appendChild(dialog);
+        backdrop.addEventListener("click", (e) => {
+            if (e.target === backdrop) {
+                backdrop.remove();
+            }
+        });
+
+        document.body.appendChild(backdrop);
+    };
 
     private readonly showSelectionControl = (controller: AsyncController) => {
         this._selectionController.setControl(controller);

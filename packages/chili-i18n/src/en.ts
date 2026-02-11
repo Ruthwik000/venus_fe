@@ -264,6 +264,7 @@ export default {
         "toast.cloudSaveFailed": "Failed to save project to cloud",
         "toast.noProjectSession": "No project session. Create a project from dashboard first.",
         "toast.projectSavedToCloud": "Project saved to cloud successfully",
+        "toast.projectUpdated": "Project updated by collaborator",
         "toast.read.error": "Read error",
         "toast.uploading": "Uploading to cloud...",
         "toast.select.noSelected": "No selected",
