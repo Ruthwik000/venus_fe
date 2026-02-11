@@ -137,6 +137,14 @@ export class Ribbon extends HTMLElement {
     private leftPanel() {
         return div(
             { className: style.left },
+            svg({
+                className: style.backButton,
+                icon: "icon-back",
+                title: "Back to Dashboard",
+                onclick: () => {
+                    window.location.href = "/dashboard";
+                },
+            }),
             span({ id: "appName", textContent: `Venus - v${__APP_VERSION__}` }),
             div(
                 { className: style.ribbonTitlePanel },
@@ -209,9 +217,6 @@ export class Ribbon extends HTMLElement {
     }
 
     private rightPanel() {
-        // Create AI chat toggle instance
-        const aiChatToggle = new (customElements.get("chili-ai-chat-toggle") as any)(this.dataContent.app);
-
         // Create layout toggle buttons (VS Code style)
         const layoutToggles = div(
             { className: style.layoutToggles },
@@ -231,16 +236,11 @@ export class Ribbon extends HTMLElement {
                 className: style.layoutButton,
                 title: "Toggle AI Chat",
                 textContent: "◨",
-                onclick: () => {
-                    const toggleBtn = aiChatToggle.querySelector("button");
-                    if (toggleBtn) {
-                        toggleBtn.click();
-                    }
-                },
+                onclick: () => PubSub.default.pub("toggleAIChat", true),
             }),
         );
 
-        return div({ className: style.right }, layoutToggles, aiChatToggle);
+        return div({ className: style.right }, layoutToggles);
     }
 
     private ribbonTabs() {

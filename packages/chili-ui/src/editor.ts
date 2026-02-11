@@ -13,6 +13,7 @@ import {
     PubSub,
     type RibbonTab,
 } from "chili-core";
+import { AIChatPanel } from "./aiChat";
 import style from "./editor.module.css";
 import { OKCancel } from "./okCancel";
 import { ProjectView } from "./project";
@@ -33,6 +34,8 @@ export class Editor extends HTMLElement {
     private _isResizingSidebar: boolean = false;
     private _sidebarEl: HTMLDivElement | null = null;
     private _isSidebarVisible: boolean = true;
+    private _aiChatPanel: AIChatPanel | null = null;
+    private _isAIChatVisible: boolean = false;
 
     constructor(
         readonly app: IApplication,
@@ -65,11 +68,21 @@ export class Editor extends HTMLElement {
                 onmousedown: (e: MouseEvent) => this._startSidebarResize(e),
             }),
         );
+
+        // Create AI chat panel but don't show it initially
+        this._aiChatPanel = new AIChatPanel(this.app);
+        this._aiChatPanel.style.display = "none";
+
         this.append(
             div(
                 { className: style.root },
                 new Ribbon(this.ribbonContent),
-                div({ className: style.content }, this._sidebarEl, this._viewportContainer),
+                div(
+                    { className: style.content },
+                    this._sidebarEl,
+                    this._viewportContainer,
+                    this._aiChatPanel,
+                ),
                 new Statusbar(style.statusbar),
             ),
         );
@@ -106,6 +119,7 @@ export class Editor extends HTMLElement {
         PubSub.default.sub("editMaterial", this._handleMaterialEdit);
         PubSub.default.sub("clearSelectionControl", this.clearSelectionControl);
         PubSub.default.sub("toggleLeftSidebar", this._toggleSidebar);
+        PubSub.default.sub("toggleAIChat", this._toggleAIChat);
     }
 
     disconnectedCallback(): void {
@@ -113,6 +127,7 @@ export class Editor extends HTMLElement {
         PubSub.default.remove("editMaterial", this._handleMaterialEdit);
         PubSub.default.remove("clearSelectionControl", this.clearSelectionControl);
         PubSub.default.remove("toggleLeftSidebar", this._toggleSidebar);
+        PubSub.default.remove("toggleAIChat", this._toggleAIChat);
     }
 
     private readonly showSelectionControl = (controller: AsyncController) => {
@@ -145,6 +160,13 @@ export class Editor extends HTMLElement {
         this._isSidebarVisible = !this._isSidebarVisible;
         if (this._sidebarEl) {
             this._sidebarEl.style.display = this._isSidebarVisible ? "flex" : "none";
+        }
+    };
+
+    private readonly _toggleAIChat = () => {
+        this._isAIChatVisible = !this._isAIChatVisible;
+        if (this._aiChatPanel) {
+            this._aiChatPanel.style.display = this._isAIChatVisible ? "flex" : "none";
         }
     };
 }

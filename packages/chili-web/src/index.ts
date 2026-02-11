@@ -26,10 +26,13 @@ async function handleApplicaionBuilt(app: IApplication) {
     // Capture all Chili3D UI elements before routing starts
     chiliUIElements = Array.from(appContainer.children) as HTMLElement[];
 
-    // Hide Chili3D UI initially (will be shown when navigating to /editor)
-    chiliUIElements.forEach((el) => {
-        el.style.display = "none";
-    });
+    // Only hide Chili3D UI if we're NOT on the editor route
+    const currentPath = window.location.pathname;
+    if (currentPath !== "/editor") {
+        chiliUIElements.forEach((el) => {
+            el.style.display = "none";
+        });
+    }
 
     // Setup and start router
     const router = setupRoutes(app);
