@@ -41,6 +41,8 @@ export class AIChatPanel extends HTMLElement {
     private connectionStatus: HTMLSpanElement;
     private currentIntent: string | null = null;
     private intentBadge: HTMLSpanElement;
+    private modelTypeSelect: HTMLSelectElement;
+    private modelType: string = "openai";
 
     constructor(private readonly app: IApplication) {
         super();
@@ -76,6 +78,20 @@ export class AIChatPanel extends HTMLElement {
             textContent: "Send",
             onclick: () => this.handleSendMessage(),
         }) as HTMLButtonElement;
+
+        this.modelTypeSelect = document.createElement("select");
+        this.modelTypeSelect.className = style.modelTypeSelect;
+        const openaiOption = document.createElement("option");
+        openaiOption.value = "openai";
+        openaiOption.textContent = "OpenAI";
+        const geminiOption = document.createElement("option");
+        geminiOption.value = "gemini";
+        geminiOption.textContent = "Gemini";
+        this.modelTypeSelect.appendChild(openaiOption);
+        this.modelTypeSelect.appendChild(geminiOption);
+        this.modelTypeSelect.addEventListener("change", (e) => {
+            this.modelType = (e.target as HTMLSelectElement).value;
+        });
 
         this.connectionStatus = document.createElement("span");
         this.connectionStatus.className = style.connectionStatus;
@@ -408,7 +424,12 @@ export class AIChatPanel extends HTMLElement {
             this.saveSessionButton,
         );
 
-        const inputContainer = div({ className: style.chatInput }, this.inputField, this.sendButton);
+        const inputContainer = div(
+            { className: style.chatInput },
+            this.modelTypeSelect,
+            this.inputField,
+            this.sendButton,
+        );
 
         const resizer = div({
             className: style.chatResizer,
@@ -506,6 +527,7 @@ export class AIChatPanel extends HTMLElement {
         const data = {
             message: message,
             uid: this.uid,
+            model_type: this.modelType,
             type: "user_message",
         };
 

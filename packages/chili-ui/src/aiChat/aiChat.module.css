@@ -265,6 +265,26 @@
     background-color: #1f1f1f;
 }
 
+.modelTypeSelect {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--input-border-color);
+    background-color: var(--input-background-color);
+    color: var(--input-text-color);
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    font-family: inherit;
+}
+
+.modelTypeSelect:hover {
+    border-color: var(--accent-color);
+}
+
+.modelTypeSelect:focus {
+    border-color: var(--accent-color);
+}
+
 .inputField {
     flex: 1;
     padding: 12px 16px;
