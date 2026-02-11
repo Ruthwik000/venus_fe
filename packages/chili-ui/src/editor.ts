@@ -15,6 +15,7 @@ import {
 } from "chili-core";
 import { AIChatPanel } from "./aiChat";
 import { CommentsPanel, PresenceIndicators, ShareDialog } from "./collaboration";
+import { ChatDialog } from "./collaboration/chatDialog";
 import style from "./editor.module.css";
 import { OKCancel } from "./okCancel";
 import { ProjectView } from "./project";
@@ -148,6 +149,7 @@ export class Editor extends HTMLElement {
         PubSub.default.sub("toggleLeftSidebar", this._toggleSidebar);
         PubSub.default.sub("toggleAIChat", this._toggleAIChat);
         PubSub.default.sub("openShareDialog", this._openShareDialog);
+        PubSub.default.sub("openChatDialog", this._openChatDialog);
     }
 
     disconnectedCallback(): void {
@@ -157,6 +159,7 @@ export class Editor extends HTMLElement {
         PubSub.default.remove("toggleLeftSidebar", this._toggleSidebar);
         PubSub.default.remove("toggleAIChat", this._toggleAIChat);
         PubSub.default.remove("openShareDialog", this._openShareDialog);
+        PubSub.default.remove("openChatDialog", this._openChatDialog);
     }
 
     private readonly _openShareDialog = async () => {
@@ -186,6 +189,17 @@ export class Editor extends HTMLElement {
         });
 
         document.body.appendChild(backdrop);
+    };
+
+    private readonly _openChatDialog = async () => {
+        if (!this._currentProjectId) {
+            alert("No project loaded");
+            return;
+        }
+
+        const dialog = new ChatDialog(this._currentProjectId);
+        dialog.show();
+        document.body.appendChild(dialog);
     };
 
     private readonly showSelectionControl = (controller: AsyncController) => {

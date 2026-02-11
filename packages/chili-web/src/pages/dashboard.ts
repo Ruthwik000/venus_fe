@@ -74,7 +74,7 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
-                        <span id="notification-badge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;border-radius:50%;width:8px;height:8px;"></span>
+                        <span id="notification-badge" style="display:none;position:absolute;top:4px;right:4px;background:#ffffff;border-radius:50%;width:8px;height:8px;"></span>
                     </button>
                     <div class="header-user">
                         <div class="user-avatar">${username.charAt(0).toUpperCase()}</div>
@@ -362,6 +362,75 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
     `;
     container.appendChild(createTeamDialog);
 
+    // Add Team Management Dialog
+    const teamManagementDialog = document.createElement("div");
+    teamManagementDialog.id = "team-management-dialog";
+    teamManagementDialog.style.cssText = `
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    `;
+    teamManagementDialog.innerHTML = `
+        <div style="background: rgba(20, 20, 20, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 90%; max-width: 1200px; max-height: 85vh; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
+                <h2 id="team-management-title" style="margin: 0; font-size: 1.25rem; color: white;">Team Management</h2>
+                <button id="close-team-management-dialog" style="background: transparent; border: none; color: #888; cursor: pointer; font-size: 24px; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px;">×</button>
+            </div>
+            
+            <div style="flex: 1; overflow: hidden; display: flex;">
+                <!-- Left Panel: Members -->
+                <div style="flex: 1; border-right: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column;">
+                    <div style="padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                        <h3 style="margin: 0 0 12px 0; font-size: 1rem; color: white;">Team Members</h3>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="email" id="add-member-email-input" placeholder="Enter email to invite" style="flex: 1; padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white; font-size: 13px;">
+                            <button id="add-member-btn" style="padding: 8px 16px; background: #2d2d2d; color: white; border: 1px solid #404040; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap;">Add</button>
+                        </div>
+                    </div>
+                    <div id="team-members-list" style="flex: 1; overflow-y: auto; padding: 1rem;"></div>
+                </div>
+                
+                <!-- Right Panel: Projects -->
+                <div style="flex: 1; display: flex; flex-direction: column;">
+                    <div style="padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="margin: 0; font-size: 1rem; color: white;">Team Projects</h3>
+                            <button id="add-project-to-team-btn" style="padding: 6px 12px; background: #2d2d2d; color: white; border: 1px solid #404040; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Project
+                            </button>
+                        </div>
+                    </div>
+                    <div id="team-projects-list" style="flex: 1; overflow-y: auto; padding: 1rem;"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(teamManagementDialog);
+
+    // Team Management Dialog handlers
+    document.getElementById("close-team-management-dialog")?.addEventListener("click", () => {
+        const dialog = document.getElementById("team-management-dialog");
+        if (dialog) dialog.style.display = "none";
+    });
+
+    document.getElementById("team-management-dialog")?.addEventListener("click", (e) => {
+        if (e.target === document.getElementById("team-management-dialog")) {
+            const dialog = document.getElementById("team-management-dialog");
+            if (dialog) dialog.style.display = "none";
+        }
+    });
+
     // ─── Event handlers ─────────────────────────────────────────────────
 
     // Tab switching
@@ -538,6 +607,7 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
         if (dialog) {
             dialog.style.display = "flex";
             loadNotificationsDialog();
+            updateNotificationBadge();
         }
     });
 
@@ -725,14 +795,6 @@ async function updateNotificationBadge(): Promise<void> {
             accessRequests.length +
             teamInvitationsSnap.size +
             projectInvitations.length;
-
-        console.log("Notifications found:", {
-            friendRequests: friendRequests.length,
-            accessRequests: accessRequests.length,
-            teamInvitations: teamInvitationsSnap.size,
-            projectInvitations: projectInvitations.length,
-            total: totalNotifications,
-        });
 
         const badge = document.getElementById("notification-badge");
         if (badge) {
@@ -944,6 +1006,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         await accessRequestService.approveRequest(requestId, "editor");
                         loadNotificationsDialog();
                         updateNotificationBadge();
+
                         alert("Access request approved!");
                     } catch (error) {
                         console.error("Failed to approve access request:", error);
@@ -976,6 +1039,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         await friendService.acceptFriendRequest(requestId);
                         loadNotificationsDialog();
                         updateNotificationBadge();
+
                         alert("Friend request accepted!");
                     } catch (error) {
                         console.error("Failed to accept friend request:", error);
@@ -1030,6 +1094,7 @@ async function loadNotificationsDialog(): Promise<void> {
 
                         loadNotificationsDialog();
                         updateNotificationBadge();
+
                         alert("Team invitation accepted!");
                     } catch (error) {
                         console.error("Failed to accept team invitation:", error);
@@ -1070,6 +1135,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         await shareService.acceptProjectInvitation(invitationId);
                         loadNotificationsDialog();
                         updateNotificationBadge();
+
                         alert(
                             "Project invitation accepted! The project is now in your Collaborative Projects.",
                         );
@@ -1190,8 +1256,42 @@ async function loadProjectsTab(router: IRouter): Promise<void> {
     try {
         const projects = await projectService.getProjects();
         const starredProjects = await projectService.getStarredProjects();
-        const { shareService } = await import("chili-core");
+        const { shareService, projectCollaboratorService } = await import("chili-core");
         const sharedProjects = await shareService.getSharedProjects();
+
+        // Get user's own projects that have collaborators (collaborative projects they own)
+        const collaborativeOwnProjects = [];
+        console.log(`Checking ${projects.length} projects for collaborators...`);
+        for (const project of projects) {
+            try {
+                const collaborators = await projectCollaboratorService.getCollaborators(
+                    project.sessionId,
+                    project.userId,
+                );
+                console.log(
+                    `Project "${project.projectName}" (${project.sessionId}) has ${collaborators.length} collaborator(s):`,
+                    collaborators.map((c) => c.email),
+                );
+                // If project has more than 1 collaborator (owner + others), it's collaborative
+                if (collaborators.length > 1) {
+                    console.log(
+                        `✓ Project "${project.projectName}" is collaborative (${collaborators.length} collaborators)`,
+                    );
+                    collaborativeOwnProjects.push(project);
+                }
+            } catch (error) {
+                // Skip projects that don't have collaborators subcollection yet
+                console.log(
+                    `⚠ No collaborators subcollection for project "${project.projectName}" (${project.sessionId})`,
+                    error,
+                );
+            }
+        }
+        console.log(`Found ${collaborativeOwnProjects.length} collaborative own projects`);
+        console.log(`Found ${sharedProjects.length} shared projects`);
+
+        // Combine shared projects and own collaborative projects
+        const allCollaborativeProjects = [...sharedProjects, ...collaborativeOwnProjects];
 
         // Load starred projects
         const starredGrid = document.getElementById("starred-projects-grid");
@@ -1239,10 +1339,10 @@ async function loadProjectsTab(router: IRouter): Promise<void> {
             }
         }
 
-        // Load collaborative projects (shared with me)
+        // Load collaborative projects (shared with me + my projects with collaborators)
         const collabGrid = document.getElementById("collaborative-projects-grid");
         if (collabGrid) {
-            if (sharedProjects.length === 0) {
+            if (allCollaborativeProjects.length === 0) {
                 collabGrid.innerHTML = `
                     <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;cursor:default;">
                         <div style="text-align:center;color:#888;">
@@ -1252,8 +1352,14 @@ async function loadProjectsTab(router: IRouter): Promise<void> {
                 `;
             } else {
                 collabGrid.innerHTML = "";
+                // Render shared projects (projects shared with me)
                 for (const share of sharedProjects) {
                     const card = createSharedProjectCard(share, router);
+                    collabGrid.appendChild(card);
+                }
+                // Render own collaborative projects (my projects with collaborators)
+                for (const project of collaborativeOwnProjects) {
+                    const card = createProjectCard(project, router, true);
                     collabGrid.appendChild(card);
                 }
             }
@@ -1485,6 +1591,7 @@ async function loadTeams(router: IRouter): Promise<void> {
         for (const team of teams) {
             const card = document.createElement("div");
             card.className = "project-glass-card";
+            card.style.cursor = "pointer";
             card.innerHTML = `
                 <div class="project-preview">
                     <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1498,7 +1605,38 @@ async function loadTeams(router: IRouter): Promise<void> {
                         <span class="tag-modern">Member</span>
                     </div>
                 </div>
+                <div class="project-actions" style="position: absolute; top: 12px; right: 12px; display: flex; gap: 8px;">
+                    <button class="delete-team-btn" data-team-id="${team.id}" style="background: #2d2d2d; border: 1px solid #404040; border-radius: 6px; padding: 6px 10px; color: #ff4444; cursor: pointer; font-size: 12px; transition: all 0.2s;" title="Delete Team">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
             `;
+
+            // Click to open team management
+            card.addEventListener("click", (e) => {
+                // Don't open if clicking delete button
+                if ((e.target as HTMLElement).closest(".delete-team-btn")) return;
+                openTeamManagement(team);
+            });
+
+            // Delete button handler
+            const deleteBtn = card.querySelector(".delete-team-btn");
+            deleteBtn?.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                if (confirm(`Are you sure you want to delete the team "${team.name}"?`)) {
+                    try {
+                        await teamService.deleteTeam(team.id);
+                        loadTeams(router);
+                        alert("Team deleted successfully!");
+                    } catch (error) {
+                        console.error("Failed to delete team:", error);
+                        alert("Failed to delete team. You must be the team owner.");
+                    }
+                }
+            });
+
             grid.appendChild(card);
         }
     } catch (error) {
@@ -1778,5 +1916,411 @@ async function handleCreateTeam(router: IRouter): Promise<void> {
         alert(
             `Failed to create team: ${error instanceof Error ? error.message : "Unknown error"}. Please check console for details.`,
         );
+    }
+}
+
+// ─── Team Management Dialog Functions ───────────────────────────────────
+
+async function openTeamManagement(team: any): Promise<void> {
+    const dialog = document.getElementById("team-management-dialog");
+    if (!dialog) return;
+
+    // Set team name in title
+    const titleEl = document.getElementById("team-management-title");
+    if (titleEl) titleEl.textContent = `${team.name} - Management`;
+
+    // Show dialog
+    dialog.style.display = "flex";
+
+    // Load members
+    await loadTeamMembers(team);
+
+    // Load projects
+    await loadTeamProjects(team);
+
+    // Setup add member button
+    const addMemberBtn = document.getElementById("add-member-btn");
+    const addMemberInput = document.getElementById("add-member-email-input") as HTMLInputElement;
+
+    const handleAddMember = async () => {
+        const email = addMemberInput?.value.trim();
+        if (!email) {
+            alert("Please enter an email address");
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert("Please enter a valid email address");
+            return;
+        }
+
+        try {
+            const { teamService } = await import("chili-core");
+            await teamService.inviteToTeam(team.id, email);
+            alert(`Invitation sent to ${email}`);
+            addMemberInput.value = "";
+        } catch (error) {
+            console.error("Failed to invite member:", error);
+            alert("Failed to send invitation. Please try again.");
+        }
+    };
+
+    // Remove old listeners and add new one
+    const newAddMemberBtn = addMemberBtn?.cloneNode(true) as HTMLElement;
+    addMemberBtn?.parentNode?.replaceChild(newAddMemberBtn, addMemberBtn);
+    newAddMemberBtn?.addEventListener("click", handleAddMember);
+
+    // Setup add project button
+    const addProjectBtn = document.getElementById("add-project-to-team-btn");
+    const handleAddProject = async () => {
+        try {
+            // Get user's projects
+            const projects = await projectService.getProjects();
+            
+            // Filter out projects already in the team
+            const availableProjects = projects.filter(p => !team.projectIds.includes(p.sessionId));
+            
+            if (availableProjects.length === 0) {
+                alert("No available projects to add. All your projects are already in this team.");
+                return;
+            }
+
+            // Create a simple selection dialog
+            const projectNames = availableProjects.map((p, i) => `${i + 1}. ${p.projectName}`).join("\n");
+            const selection = prompt(`Select a project to add to the team:\n\n${projectNames}\n\nEnter the number:`);
+            
+            if (!selection) return;
+            
+            const index = parseInt(selection) - 1;
+            if (isNaN(index) || index < 0 || index >= availableProjects.length) {
+                alert("Invalid selection");
+                return;
+            }
+
+            const selectedProject = availableProjects[index];
+            
+            // Add project to team
+            const { teamService } = await import("chili-core");
+            await teamService.addProjectToTeam(team.id, selectedProject.sessionId);
+            
+            // Update project's teamId
+            const user = auth.currentUser;
+            if (user) {
+                const projectRef = doc(db, "users", user.uid, "projects", selectedProject.sessionId);
+                await updateDoc(projectRef, { teamId: team.id });
+            }
+            
+            alert(`Project "${selectedProject.projectName}" added to team successfully!`);
+            
+            // Reload projects list
+            await loadTeamProjects(team);
+        } catch (error) {
+            console.error("Failed to add project:", error);
+            alert("Failed to add project. Please try again.");
+        }
+    };
+
+    // Remove old listeners and add new one
+    const newAddProjectBtn = addProjectBtn?.cloneNode(true) as HTMLElement;
+    addProjectBtn?.parentNode?.replaceChild(newAddProjectBtn, addProjectBtn);
+    newAddProjectBtn?.addEventListener("click", handleAddProject);
+}
+
+async function loadTeamMembers(team: any): Promise<void> {
+    const membersList = document.getElementById("team-members-list");
+    if (!membersList) return;
+
+    membersList.innerHTML =
+        '<div style="text-align: center; color: #888; padding: 20px;">Loading members...</div>';
+
+    try {
+        const { teamService } = await import("chili-core");
+        const fullTeam = await teamService.getTeam(team.id);
+        if (!fullTeam) {
+            membersList.innerHTML =
+                '<div style="text-align: center; color: #ff4444; padding: 20px;">Failed to load team</div>';
+            return;
+        }
+
+        if (fullTeam.members.length === 0) {
+            membersList.innerHTML =
+                '<div style="text-align: center; color: #888; padding: 20px;">No members yet</div>';
+            return;
+        }
+
+        membersList.innerHTML = "";
+        for (const member of fullTeam.members) {
+            const memberCard = document.createElement("div");
+            memberCard.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px;
+                background: #2d2d2d;
+                border: 1px solid #404040;
+                border-radius: 8px;
+                margin-bottom: 8px;
+            `;
+
+            const isOwner = member.role === "owner";
+            const roleColor = isOwner ? "#4ade80" : "#888";
+
+            memberCard.innerHTML = `
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: #404040; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 16px;">
+                    ${member.displayName.charAt(0).toUpperCase()}
+                </div>
+                <div style="flex: 1;">
+                    <div style="color: white; font-size: 14px; font-weight: 500;">${escapeHtml(member.displayName)}</div>
+                    <div style="color: #888; font-size: 12px;">${escapeHtml(member.email)}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="color: ${roleColor}; font-size: 12px; font-weight: 500; text-transform: uppercase;">${member.role}</span>
+                    ${!isOwner ? `<button class="remove-member-btn" data-member-id="${member.uid}" style="background: transparent; border: 1px solid #ff4444; color: #ff4444; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px;">Remove</button>` : ""}
+                </div>
+            `;
+
+            // Remove member handler
+            if (!isOwner) {
+                const removeBtn = memberCard.querySelector(".remove-member-btn");
+                removeBtn?.addEventListener("click", async () => {
+                    if (confirm(`Remove ${member.displayName} from the team?`)) {
+                        try {
+                            await teamService.removeMember(team.id, member.uid);
+                            await loadTeamMembers(team);
+                            alert("Member removed successfully");
+                        } catch (error) {
+                            console.error("Failed to remove member:", error);
+                            alert("Failed to remove member. You must be the team owner.");
+                        }
+                    }
+                });
+            }
+
+            membersList.appendChild(memberCard);
+        }
+    } catch (error) {
+        console.error("Failed to load members:", error);
+        membersList.innerHTML =
+            '<div style="text-align: center; color: #ff4444; padding: 20px;">Failed to load members</div>';
+    }
+}
+
+async function loadTeamProjects(team: any): Promise<void> {
+    const projectsList = document.getElementById("team-projects-list");
+    if (!projectsList) return;
+
+    projectsList.innerHTML =
+        '<div style="text-align: center; color: #888; padding: 20px;">Loading projects...</div>';
+
+    try {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        if (!team.projectIds || team.projectIds.length === 0) {
+            projectsList.innerHTML =
+                '<div style="text-align: center; color: #888; padding: 20px;">No projects yet</div>';
+            return;
+        }
+
+        projectsList.innerHTML = "";
+        for (const projectId of team.projectIds) {
+            // Try to get project from current user first, then from team owner
+            let project = await projectService.getProject(projectId);
+
+            // If not found in current user's projects, try getting from team owner
+            if (!project && team.ownerId !== user.uid) {
+                project = await projectService.getProjectInfo(projectId, team.ownerId);
+            }
+
+            if (!project) {
+                console.warn(`Project ${projectId} not found`);
+                continue;
+            }
+
+            const projectCard = document.createElement("div");
+            projectCard.style.cssText = `
+                padding: 12px;
+                background: #2d2d2d;
+                border: 1px solid #404040;
+                border-radius: 8px;
+                margin-bottom: 8px;
+                transition: all 0.2s;
+            `;
+
+            projectCard.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h4 style="margin: 0; color: white; font-size: 14px; font-weight: 600;">${escapeHtml(project.projectName)}</h4>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button class="open-project-btn" data-project-id="${projectId}" data-owner-id="${project.userId}" style="background: #2d2d2d; border: 1px solid #404040; color: white; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">
+                            Open
+                        </button>
+                        <svg class="toggle-history-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #888; cursor: pointer;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                </div>
+                <div style="color: #888; font-size: 12px;">Click arrow to view edit history</div>
+                <div id="project-history-${projectId}" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #404040;"></div>
+            `;
+
+            // Open project button handler
+            const openBtn = projectCard.querySelector(".open-project-btn");
+            openBtn?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const ownerId = (e.target as HTMLElement).getAttribute("data-owner-id");
+                const sessionId = (e.target as HTMLElement).getAttribute("data-project-id");
+                if (sessionId && ownerId) {
+                    // Navigate to editor with project ID and owner ID
+                    window.location.href = `/editor?sessionId=${sessionId}&ownerId=${ownerId}`;
+                }
+            });
+
+            // Add hover effect to open button
+            openBtn?.addEventListener("mouseenter", () => {
+                (openBtn as HTMLElement).style.background = "#3a3a3a";
+                (openBtn as HTMLElement).style.borderColor = "#505050";
+            });
+            openBtn?.addEventListener("mouseleave", () => {
+                (openBtn as HTMLElement).style.background = "#2d2d2d";
+                (openBtn as HTMLElement).style.borderColor = "#404040";
+            });
+
+            // Toggle history on arrow click
+            const toggleIcon = projectCard.querySelector(".toggle-history-icon");
+            toggleIcon?.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                const historyDiv = document.getElementById(`project-history-${projectId}`);
+                if (!historyDiv) return;
+
+                if (historyDiv.style.display === "none") {
+                    // Load and show history
+                    historyDiv.style.display = "block";
+                    historyDiv.innerHTML =
+                        '<div style="text-align: center; color: #888; padding: 12px; font-size: 12px;">Loading history...</div>';
+
+                    try {
+                        const { projectHistoryService } = await import("chili-core");
+                        console.log("Loading history for project:", projectId, "owner:", project.userId);
+                        
+                        let history = [];
+                        try {
+                            history = await projectHistoryService.getHistory(projectId, project.userId);
+                            console.log("History loaded:", history.length, "entries");
+                        } catch (historyError) {
+                            console.warn("Could not load history (subcollection may not exist):", historyError);
+                            // History subcollection doesn't exist yet - this is normal for new projects
+                        }
+
+                        if (history.length === 0) {
+                            historyDiv.innerHTML = `
+                                <div style="text-align: center; padding: 20px;">
+                                    <svg width="48" height="48" fill="none" stroke="#888" viewBox="0 0 24 24" style="margin: 0 auto 12px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div style="color: #888; font-size: 13px; margin-bottom: 8px;">No edit history yet</div>
+                                    <div style="color: #666; font-size: 11px; line-height: 1.5;">
+                                        History will appear when collaborators save changes.<br>
+                                        Each save creates a snapshot showing:<br>
+                                        • Who made the change<br>
+                                        • When it was made<br>
+                                        • What was changed<br>
+                                        • Downloadable version
+                                    </div>
+                                </div>
+                            `;
+                            return;
+                        }
+
+                        historyDiv.innerHTML = "";
+                        for (const change of history) {
+                            const changeItem = document.createElement("div");
+                            changeItem.style.cssText = `
+                                padding: 8px;
+                                background: #1a1a1a;
+                                border-radius: 6px;
+                                margin-bottom: 6px;
+                            `;
+
+                            const actionColors: Record<string, string> = {
+                                created: "#4ade80",
+                                modified: "#3b82f6",
+                                renamed: "#f59e0b",
+                                shared: "#8b5cf6",
+                                deleted: "#ef4444",
+                            };
+
+                            const actionColor = actionColors[change.action] || "#888";
+                            const timestamp = new Date(change.timestamp).toLocaleString();
+                            const hasFileUrl = change.fileUrl && change.fileUrl.trim() !== "";
+
+                            changeItem.innerHTML = `
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                                    <div style="flex: 1;">
+                                        <div style="color: white; font-size: 12px; font-weight: 500;">${escapeHtml(change.userName)}</div>
+                                        <div style="color: #888; font-size: 11px;">${escapeHtml(change.userEmail)}</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="color: ${actionColor}; font-size: 11px; font-weight: 500; text-transform: uppercase; background: ${actionColor}22; padding: 2px 6px; border-radius: 4px;">${change.action}</span>
+                                        ${hasFileUrl ? `<button class="view-version-btn" data-file-url="${escapeHtml(change.fileUrl || "")}" style="background: #2d2d2d; border: 1px solid #404040; color: #3b82f6; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 500;">View</button>` : ""}
+                                    </div>
+                                </div>
+                                <div style="color: #ccc; font-size: 11px; margin-bottom: 4px;">${escapeHtml(change.description)}</div>
+                                <div style="color: #666; font-size: 10px;">${timestamp}${hasFileUrl ? ' • Snapshot saved' : ''}</div>
+                            `;
+
+                            // Add view version button handler
+                            if (hasFileUrl) {
+                                const viewBtn = changeItem.querySelector(".view-version-btn");
+                                viewBtn?.addEventListener("click", (e) => {
+                                    e.stopPropagation();
+                                    const fileUrl = (e.target as HTMLElement).getAttribute("data-file-url");
+                                    if (fileUrl) {
+                                        // Open the version in a new tab or download it
+                                        if (confirm("Do you want to download this version or view it?\n\nOK = Download\nCancel = View in new tab")) {
+                                            // Download
+                                            const link = document.createElement("a");
+                                            link.href = fileUrl;
+                                            link.download = `${project.projectName}_${change.id}.cd`;
+                                            link.click();
+                                        } else {
+                                            // View in new tab
+                                            window.open(fileUrl, "_blank");
+                                        }
+                                    }
+                                });
+
+                                // Add hover effect
+                                const viewBtn2 = changeItem.querySelector(".view-version-btn");
+                                viewBtn2?.addEventListener("mouseenter", () => {
+                                    (viewBtn2 as HTMLElement).style.background = "#3a3a3a";
+                                    (viewBtn2 as HTMLElement).style.borderColor = "#505050";
+                                });
+                                viewBtn2?.addEventListener("mouseleave", () => {
+                                    (viewBtn2 as HTMLElement).style.background = "#2d2d2d";
+                                    (viewBtn2 as HTMLElement).style.borderColor = "#404040";
+                                });
+                            }
+
+                            historyDiv.appendChild(changeItem);
+                        }
+                    } catch (error) {
+                        console.error("Failed to load project history:", error);
+                        console.error("Project ID:", projectId, "Owner ID:", project.userId);
+                        historyDiv.innerHTML =
+                            '<div style="text-align: center; color: #ff4444; padding: 12px; font-size: 12px;">Failed to load history</div>';
+                    }
+                } else {
+                    // Hide history
+                    historyDiv.style.display = "none";
+                }
+            });
+
+            projectsList.appendChild(projectCard);
+        }
+    } catch (error) {
+        console.error("Failed to load projects:", error);
+        projectsList.innerHTML =
+            '<div style="text-align: center; color: #ff4444; padding: 20px;">Failed to load projects</div>';
     }
 }
