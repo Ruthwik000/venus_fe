@@ -2,10 +2,12 @@
 // See LICENSE file in the project root for full license information.
 
 import { type IApplication, Logger, type RouteMatch, Router } from "chili-core";
+import { createLoader } from "chili-ui";
 import { renderDashboard } from "./pages/dashboard";
 import { renderEditor } from "./pages/editor";
 import { renderLanding } from "./pages/landing";
 import { renderLogin } from "./pages/login";
+import { renderNotFound } from "./pages/not-found";
 import { renderRequestAccess } from "./pages/request-access";
 import { renderSignup } from "./pages/signup";
 import { renderTestEmail } from "./pages/test-email";
@@ -15,9 +17,11 @@ interface AppWithUI extends IApplication {
     chiliUIElements?: HTMLElement[];
 }
 
+// Create a global loader instance
+const globalLoader = createLoader();
+
 export function setupRoutes(app: IApplication): Router {
     const router = new Router();
-    const appWithUI = app as AppWithUI;
 
     // Landing page route
     router.addRoute("/", (_match: RouteMatch) => {
@@ -101,9 +105,11 @@ export function setupRoutes(app: IApplication): Router {
 
     // Dashboard route (requires authentication)
     router.addRoute("/dashboard", async (_match: RouteMatch) => {
+        globalLoader.show();
         Logger.info("Navigated to dashboard");
         if (!isAuthenticated()) {
             Logger.warn("User not authenticated, redirecting to login");
+            globalLoader.hide();
             router.navigate("/login");
             return;
         }
@@ -126,7 +132,7 @@ export function setupRoutes(app: IApplication): Router {
         try {
             const { cleanupRealtimeSync } = require("./pages/editor");
             cleanupRealtimeSync();
-        } catch (error) {
+        } catch {
             // Ignore if cleanup function doesn't exist
         }
 
@@ -139,6 +145,7 @@ export function setupRoutes(app: IApplication): Router {
         }
 
         renderDashboard(app, router);
+        globalLoader.hide();
     });
 
     // Request access route
@@ -158,6 +165,7 @@ export function setupRoutes(app: IApplication): Router {
 
     // Editor route - show original Chili3D interface
     router.addRoute("/editor", async (_match: RouteMatch) => {
+        globalLoader.show();
         Logger.info("Opening editor");
 
         // Wait for Firebase auth to initialize
@@ -166,7 +174,7 @@ export function setupRoutes(app: IApplication): Router {
             if (auth.currentUser) {
                 resolve();
             } else {
-                const unsubscribe = auth.onAuthStateChanged((user) => {
+                const unsubscribe = auth.onAuthStateChanged(() => {
                     unsubscribe();
                     resolve();
                 });
@@ -175,6 +183,7 @@ export function setupRoutes(app: IApplication): Router {
 
         if (!isAuthenticated() || !auth.currentUser) {
             Logger.warn("User not authenticated, redirecting to login");
+            globalLoader.hide();
             // Get sessionId from URL to preserve it
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get("sessionId") || urlParams.get("session");
@@ -210,7 +219,7 @@ export function setupRoutes(app: IApplication): Router {
                             isOwner = true;
                             Logger.info("User is the project owner");
                         }
-                    } catch (error) {
+                    } catch {
                         Logger.info("Project not found in user's projects, checking shares...");
                     }
 
@@ -226,6 +235,7 @@ export function setupRoutes(app: IApplication): Router {
                     // If no access, redirect to request access page with all parameters
                     if (!hasAccess) {
                         Logger.warn("User does not have access to this project");
+                        globalLoader.hide();
                         const params = [`sessionId=${sessionId}`];
                         if (ownerId) params.push(`owner=${ownerId}`);
                         if (projectName) params.push(`name=${projectName}`);
@@ -243,7 +253,9 @@ export function setupRoutes(app: IApplication): Router {
 
         // Remove any custom page content first
         const customElements = container.querySelectorAll(".modern-dashboard");
-        customElements.forEach((el) => el.remove());
+        for (const el of customElements) {
+            el.remove();
+        }
 
         // Reset container styling
         container.className = "";
@@ -271,12 +283,13 @@ export function setupRoutes(app: IApplication): Router {
         await renderEditor(app, router);
 
         Logger.info("Editor initialized with Chili3D UI");
+        globalLoader.hide();
     });
 
     // 404 catch-all route
     router.addRoute("*", (_match: RouteMatch) => {
         Logger.warn("Route not found");
-        router.navigate("/");
+        renderNotFound(app, router);
     });
 
     return router;
