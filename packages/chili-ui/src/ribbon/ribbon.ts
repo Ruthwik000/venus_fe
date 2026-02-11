@@ -20,7 +20,6 @@ import {
     PubSub,
     Result,
 } from "chili-core";
-import { NotificationCenter } from "../collaboration/notificationCenter";
 import { CommandContext } from "./commandContext";
 import style from "./ribbon.module.css";
 import { RibbonButton } from "./ribbonButton";
@@ -254,23 +253,15 @@ export class Ribbon extends HTMLElement {
             className: style.shareButton,
             title: "Chat with Collaborators",
             textContent: "Chat",
-            onclick: () => PubSub.default.pub("openChatDialog", true),
+            onclick: () => {
+                PubSub.default.pub<"openChatDialog">("openChatDialog", true);
+            },
         });
 
         // Add Presence Indicators (will be populated by editor)
         const presenceContainer = div({ id: "presence-indicators", className: style.presenceContainer });
 
-        // Add Notification Center
-        const notificationCenter = new NotificationCenter();
-
-        return div(
-            { className: style.right },
-            shareButton,
-            chatButton,
-            presenceContainer,
-            layoutToggles,
-            notificationCenter,
-        );
+        return div({ className: style.right }, shareButton, chatButton, presenceContainer, layoutToggles);
     }
 
     private ribbonTabs() {
