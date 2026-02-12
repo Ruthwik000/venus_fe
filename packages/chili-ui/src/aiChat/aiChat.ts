@@ -114,11 +114,47 @@ export class AIChatPanel extends HTMLElement {
     }
 
     private connectWebSocket() {
-        // WebSocket disabled - backend server not configured
-        // TODO: Implement with Ably or custom backend when needed
-        this.wsConnected = false;
-        this.updateConnectionStatus(false);
-        return;
+        const wsUrl = `wss://proletarianly-sociopsychological-myla.ngrok-free.dev/ws/chat/${this.sessionId}`;
+        Logger.info("Connecting to WebSocket:", wsUrl);
+
+        try {
+            this.ws = new WebSocket(wsUrl);
+
+            this.ws.onopen = () => {
+                Logger.info("WebSocket connected");
+                this.wsConnected = true;
+                this.updateConnectionStatus(true);
+            };
+
+            this.ws.onclose = () => {
+                Logger.info("WebSocket disconnected");
+                this.wsConnected = false;
+                this.updateConnectionStatus(false);
+                // Attempt to reconnect after 2 seconds
+                setTimeout(() => this.connectWebSocket(), 2000);
+            };
+
+            this.ws.onerror = (error) => {
+                Logger.error("WebSocket error:", error);
+                this.addMessage({
+                    role: "assistant",
+                    content: "",
+                });
+            };
+
+            this.ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    this.handleWebSocketMessage(data);
+                } catch (error) {
+                    Logger.error("Error parsing WebSocket message:", error);
+                }
+            };
+        } catch (error) {
+            Logger.error("Failed to create WebSocket:", error);
+            this.wsConnected = false;
+            this.updateConnectionStatus(false);
+        }
     }
 
     private updateConnectionStatus(connected: boolean) {
@@ -514,7 +550,7 @@ export class AIChatPanel extends HTMLElement {
 
         try {
             // Call the generation API
-            response = await fetch("http://127.0.0.1:8000/generate", {
+            response = await fetch("https://proletarianly-sociopsychological-myla.ngrok-free.dev/generate", {
                 method: "POST",
                 mode: "cors",
                 headers: {
