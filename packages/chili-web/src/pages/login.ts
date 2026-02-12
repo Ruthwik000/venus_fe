@@ -30,12 +30,7 @@ export function renderLogin(_app: IApplication, router: IRouter): void {
             <div class="auth-glass-card">
                 <!-- Logo -->
                 <div class="auth-logo">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7" />
-                        <rect x="14" y="3" width="7" height="7" />
-                        <rect x="14" y="14" width="7" height="7" />
-                        <rect x="3" y="14" width="7" height="7" />
-                    </svg>
+                    <img src="/favicon.svg" alt="Venus" style="width: 48px; height: 48px; filter: brightness(0) invert(1);" />
                 </div>
 
                 <!-- Header -->
