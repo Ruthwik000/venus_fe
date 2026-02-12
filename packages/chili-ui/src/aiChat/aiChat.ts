@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { button, div, input } from "chili-controls";
+import { button, div, span } from "chili-controls";
 import { authService, type IApplication, Logger } from "chili-core";
 import style from "./aiChat.module.css";
 
@@ -10,7 +10,7 @@ interface Message {
     content: string;
     questions?: Question[];
     streaming?: boolean;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
 }
 
 interface Question {
@@ -19,8 +19,18 @@ interface Question {
     key?: string;
 }
 
-interface PendingQuestions {
-    questions: Question[];
+interface WebSocketData {
+    type: string;
+    intent?: string;
+    confidence?: number;
+    content?: string;
+    metadata?: Record<string, unknown>;
+    data?: Record<string, unknown>;
+    questions?: Question[];
+    message?: string;
+    download_urls?: Record<string, string>;
+    download_url?: string;
+    files?: Record<string, string>;
 }
 
 export class AIChatPanel extends HTMLElement {
@@ -31,16 +41,13 @@ export class AIChatPanel extends HTMLElement {
     private isProcessing: boolean = false;
     private sessionId: string;
     private uid: string;
-    private sessionIdInput: HTMLInputElement;
-    private saveSessionButton: HTMLButtonElement;
-    private pendingQuestions: PendingQuestions | null = null;
     private ws: WebSocket | null = null;
     private currentMessageElement: HTMLDivElement | null = null;
     private currentMessage: Message | null = null;
+    private currentContentElement: HTMLDivElement | null = null;
     private wsConnected: boolean = false;
-    private connectionStatus: HTMLSpanElement;
-    private currentIntent: string | null = null;
-    private intentBadge: HTMLSpanElement;
+    private connectionDot: HTMLDivElement;
+    private agentStatusElement: HTMLDivElement | null = null;
     private modelTypeSelect: HTMLSelectElement;
     private modelType: string = "openai";
 
@@ -51,7 +58,7 @@ export class AIChatPanel extends HTMLElement {
         this.messagesContainer = div({ className: style.chatMessages });
         this.inputField = document.createElement("textarea") as HTMLTextAreaElement;
         this.inputField.className = style.inputField;
-        this.inputField.placeholder = "Ask me to create a CAD model, modify it, or answer questions...";
+        this.inputField.placeholder = "Ask Copilot...";
 
         // Use project session ID if available, otherwise generate a new one
         const projectSessionId = localStorage.getItem("currentSessionId");
@@ -60,22 +67,9 @@ export class AIChatPanel extends HTMLElement {
         const currentUser = authService.getCurrentUser();
         this.uid = currentUser?.uid ?? "anonymous";
 
-        this.sessionIdInput = input({
-            className: style.sessionInput,
-            placeholder: "Session ID",
-            type: "text",
-            value: this.sessionId,
-        }) as HTMLInputElement;
-
-        this.saveSessionButton = button({
-            className: style.saveSessionButton,
-            textContent: "Save",
-            onclick: () => this.handleSaveSession(),
-        }) as HTMLButtonElement;
-
         this.sendButton = button({
             className: style.sendButton,
-            textContent: "Send",
+            textContent: "\u2191",
             onclick: () => this.handleSendMessage(),
         }) as HTMLButtonElement;
 
@@ -93,12 +87,7 @@ export class AIChatPanel extends HTMLElement {
             this.modelType = (e.target as HTMLSelectElement).value;
         });
 
-        this.connectionStatus = document.createElement("span");
-        this.connectionStatus.className = style.connectionStatus;
-
-        this.intentBadge = document.createElement("span");
-        this.intentBadge.className = style.intentBadge;
-        this.intentBadge.style.display = "none";
+        this.connectionDot = div({ className: style.connectionDot });
 
         this.render();
         this.setupInputHandlers();
@@ -159,19 +148,17 @@ export class AIChatPanel extends HTMLElement {
 
     private updateConnectionStatus(connected: boolean) {
         if (connected) {
-            this.connectionStatus.textContent = "🟢 Connected";
-            this.connectionStatus.className = `${style.connectionStatus} ${style.connected}`;
+            this.connectionDot.className = `${style.connectionDot} ${style.connected}`;
             this.sendButton.disabled = false;
             this.inputField.disabled = false;
         } else {
-            this.connectionStatus.textContent = "🔴 Disconnected";
-            this.connectionStatus.className = `${style.connectionStatus} ${style.disconnected}`;
+            this.connectionDot.className = `${style.connectionDot} ${style.disconnected}`;
             this.sendButton.disabled = true;
             this.inputField.disabled = true;
         }
     }
 
-    private handleWebSocketMessage(data: any) {
+    private handleWebSocketMessage(data: WebSocketData) {
         console.log("🔔 WebSocket Message Received:", data);
         console.log("Message Type:", data.type);
         Logger.info("Received WebSocket message:", data);
@@ -212,37 +199,42 @@ export class AIChatPanel extends HTMLElement {
         }
     }
 
-    private handleIntentDetection(data: any) {
-        this.currentIntent = data.intent;
+    private handleIntentDetection(data: WebSocketData) {
         const confidence = Math.round((data.confidence || 0) * 100);
         Logger.info(`Intent detected: ${data.intent} (${confidence}% confident)`);
 
-        // Update intent badge
-        this.intentBadge.textContent = data.intent.replace("_", " ").toUpperCase();
-        this.intentBadge.style.display = "inline-block";
+        const statusLabel = (data.intent ?? "").replace(/_/g, " ");
+        const displayText = `${statusLabel.charAt(0).toUpperCase()}${statusLabel.slice(1)}...`;
+        this.showAgentStatus(displayText);
     }
 
     private showTypingIndicator() {
-        // Remove existing typing indicator if any
         this.removeTypingIndicator();
 
         const typingDiv = div({ className: style.typingIndicator });
-        typingDiv.innerHTML = "<span>●</span><span>●</span><span>●</span>";
+        const avatarEl = div({ className: `${style.avatar} ${style.assistantAvatar}` });
+        avatarEl.textContent = "\u2726";
+        const dotsWrapper = div({ className: style.typingDots });
+        dotsWrapper.innerHTML = "<span></span><span></span><span></span>";
+        typingDiv.appendChild(avatarEl);
+        typingDiv.appendChild(dotsWrapper);
         this.messagesContainer.appendChild(typingDiv);
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
 
     private removeTypingIndicator() {
         const typingIndicators = this.messagesContainer.querySelectorAll(`.${style.typingIndicator}`);
-        typingIndicators.forEach((indicator) => indicator.remove());
+        typingIndicators.forEach((indicator) => {
+            indicator.remove();
+        });
     }
 
-    private showToolExecution(data: any) {
+    private showToolExecution(data: WebSocketData) {
         this.removeTypingIndicator();
 
         const toolMessage: Message = {
             role: "tool",
-            content: data.data.description || `Running ${data.data.tool}...`,
+            content: (data.data?.description as string) || `Running ${data.data?.tool as string}...`,
         };
 
         const messageEl = this.createMessageElement(toolMessage);
@@ -251,11 +243,11 @@ export class AIChatPanel extends HTMLElement {
         this.messages.push(toolMessage);
     }
 
-    private appendTextChunk(data: any) {
+    private appendTextChunk(data: WebSocketData) {
         this.removeTypingIndicator();
+        this.removeAgentStatus();
 
         if (!this.currentMessage || !this.currentMessageElement) {
-            // Start new bot message
             this.currentMessage = {
                 role: "assistant",
                 content: data.content,
@@ -263,28 +255,27 @@ export class AIChatPanel extends HTMLElement {
                 metadata: data.metadata,
             };
             this.currentMessageElement = this.createMessageElement(this.currentMessage);
+            this.currentContentElement = this.currentMessageElement.querySelector(
+                `.${style.messageContent}`,
+            ) as HTMLDivElement;
             this.currentMessageElement.classList.add(style.streaming);
             this.messagesContainer.appendChild(this.currentMessageElement);
             this.messages.push(this.currentMessage);
         } else {
-            // Append to existing message
             this.currentMessage.content += data.content;
-            this.currentMessageElement.textContent = this.currentMessage.content;
+            if (this.currentContentElement) {
+                this.currentContentElement.textContent = this.currentMessage.content;
+            }
         }
 
-        // Auto-scroll to bottom
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
 
-    private showClarifyingQuestions(data: any) {
+    private showClarifyingQuestions(data: WebSocketData) {
         this.removeTypingIndicator();
         this.finalizeCurrentMessage();
 
         if (data.questions && data.questions.length > 0) {
-            this.pendingQuestions = {
-                questions: data.questions,
-            };
-
             // Show interactive question form
             this.showQuestionForm(data.questions);
 
@@ -294,7 +285,7 @@ export class AIChatPanel extends HTMLElement {
         }
     }
 
-    private async handleComplete(data: any) {
+    private async handleComplete(data: WebSocketData) {
         console.log("🎯 handleComplete called");
         console.log("Complete data structure:", JSON.stringify(data, null, 2));
 
@@ -303,9 +294,8 @@ export class AIChatPanel extends HTMLElement {
 
         Logger.info("Response complete - Full data:", JSON.stringify(data, null, 2));
 
-        // Hide intent badge after completion
-        this.intentBadge.style.display = "none";
-        this.currentIntent = null;
+        // Hide agent status after completion
+        this.removeAgentStatus();
 
         // Try multiple possible paths for download URL
         let downloadUrl = null;
@@ -315,34 +305,35 @@ export class AIChatPanel extends HTMLElement {
         console.log("Checking data.data?.download_url:", data.data?.download_url);
         console.log("Checking data.data?.files:", data.data?.files);
 
-        if (data.data && data.data.download_urls) {
+        if (data.data?.download_urls) {
             // Backend returns download_urls object with step/stl keys
-            const urls = data.data.download_urls;
+            const urls = data.data.download_urls as Record<string, string>;
             downloadUrl =
                 urls.step ||
                 urls.stl ||
-                Object.values(urls).find((u: any) => typeof u === "string" && u.length > 0);
+                Object.values(urls).find((u: unknown) => typeof u === "string" && (u as string).length > 0);
             console.log("✅ Found in data.data.download_urls:", downloadUrl);
-        } else if (data.data && data.data.download_url) {
-            downloadUrl = data.data.download_url;
+        } else if (data.data?.download_url) {
+            downloadUrl = data.data.download_url as string;
             console.log("✅ Found in data.data.download_url:", downloadUrl);
         } else if (data.download_urls) {
             const urls = data.download_urls;
             downloadUrl =
                 urls.step ||
                 urls.stl ||
-                Object.values(urls).find((u: any) => typeof u === "string" && u.length > 0);
+                Object.values(urls).find((u: unknown) => typeof u === "string" && (u as string).length > 0);
             console.log("✅ Found in data.download_urls:", downloadUrl);
         } else if (data.download_url) {
             downloadUrl = data.download_url;
             console.log("✅ Found in data.download_url:", downloadUrl);
-        } else if (data.data && data.data.files) {
+        } else if (data.data?.files) {
             // Check for files object
-            if (data.data.files.step) {
-                downloadUrl = data.data.files.step;
+            const files = data.data.files as Record<string, string>;
+            if (files.step) {
+                downloadUrl = files.step;
                 console.log("✅ Found in data.data.files.step:", downloadUrl);
-            } else if (data.data.files.stl) {
-                downloadUrl = data.data.files.stl;
+            } else if (files.stl) {
+                downloadUrl = files.stl;
                 console.log("✅ Found in data.data.files.stl:", downloadUrl);
             }
         } else if (data.files) {
@@ -384,20 +375,20 @@ export class AIChatPanel extends HTMLElement {
         this.inputField.disabled = false;
     }
 
-    private showError(data: any) {
+    private showError(data: WebSocketData) {
         this.removeTypingIndicator();
+        this.removeAgentStatus();
         this.finalizeCurrentMessage();
 
-        const errorMessage = data.data?.message || data.message || "An error occurred";
+        const errorMessage = (data.data?.message as string) || data.message || "An error occurred";
         this.addMessage({
             role: "assistant",
-            content: `❌ ${errorMessage}`,
+            content: `\u274C ${errorMessage}`,
         });
 
         this.isProcessing = false;
         this.sendButton.disabled = false;
         this.inputField.disabled = false;
-        this.intentBadge.style.display = "none";
     }
 
     private finalizeCurrentMessage() {
@@ -406,36 +397,65 @@ export class AIChatPanel extends HTMLElement {
             this.currentMessage.streaming = false;
         }
         this.currentMessageElement = null;
+        this.currentContentElement = null;
         this.currentMessage = null;
     }
 
+    private showAgentStatus(statusText: string) {
+        this.removeAgentStatus();
+
+        const statusRow = div({ className: style.agentStatusRow });
+        const sparkle = span({
+            className: style.statusSparkle,
+            textContent: "\u2726",
+        });
+        const text = span({
+            className: style.statusText,
+            textContent: statusText,
+        });
+
+        statusRow.appendChild(sparkle);
+        statusRow.appendChild(text);
+
+        this.agentStatusElement = statusRow;
+        this.messagesContainer.appendChild(statusRow);
+        this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+    }
+
+    private removeAgentStatus() {
+        if (this.agentStatusElement) {
+            this.agentStatusElement.remove();
+            this.agentStatusElement = null;
+        }
+    }
+
     private render() {
+        const closeBtn = button({
+            className: style.closeButton,
+            textContent: "\u2715",
+            onclick: () => this.close(),
+        }) as HTMLButtonElement;
+
         const header = div(
             { className: style.chatHeader },
-            div({ className: style.chatTitle, textContent: "CAD Copilot" }),
-            this.intentBadge,
-            this.connectionStatus,
+            div(
+                { className: style.headerLeft },
+                span({ className: style.copilotIcon, textContent: "\u2726" }),
+                div({ className: style.chatTitle, textContent: "CAD Copilot" }),
+            ),
+            div({ className: style.headerActions }, this.connectionDot, closeBtn),
         );
 
-        const sessionContainer = div(
-            { className: style.sessionContainer },
-            this.sessionIdInput,
-            this.saveSessionButton,
-        );
+        const inputWrapper = div({ className: style.inputWrapper }, this.modelTypeSelect, this.inputField);
 
-        const inputContainer = div(
-            { className: style.chatInput },
-            this.modelTypeSelect,
-            this.inputField,
-            this.sendButton,
-        );
+        const inputContainer = div({ className: style.chatInput }, inputWrapper, this.sendButton);
 
         const resizer = div({
             className: style.chatResizer,
             onmousedown: (e: MouseEvent) => this.startResize(e),
         });
 
-        this.append(resizer, header, sessionContainer, this.messagesContainer, inputContainer);
+        this.append(resizer, header, this.messagesContainer, inputContainer);
     }
 
     private startResize(e: MouseEvent) {
@@ -456,28 +476,6 @@ export class AIChatPanel extends HTMLElement {
 
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
-    }
-
-    private handleSaveSession() {
-        const inputValue = this.sessionIdInput.value.trim();
-        if (inputValue && inputValue !== this.sessionId) {
-            // Reconnect with new session ID
-            if (this.ws) {
-                this.ws.close();
-            }
-            this.sessionId = inputValue;
-            this.connectWebSocket();
-            this.addMessage({
-                role: "assistant",
-                content: `Switched to session: ${this.sessionId}`,
-            });
-            Logger.info(`Session ID changed to: ${this.sessionId}`);
-        } else {
-            this.addMessage({
-                role: "assistant",
-                content: `Current session: ${this.sessionId}`,
-            });
-        }
     }
 
     private setupInputHandlers() {
@@ -545,27 +543,6 @@ export class AIChatPanel extends HTMLElement {
         }
     }
 
-    private async generateModel(prompt: string) {
-        let response: Response;
-
-        try {
-            // Call the generation API
-            response = await fetch("https://proletarianly-sociopsychological-myla.ngrok-free.dev/generate", {
-                method: "POST",
-                mode: "cors",
-                headers: {
-                    accept: "application/json",
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ prompt: prompt }),
-            });
-        } catch (fetchError) {
-            throw new Error(
-                "Cannot connect to the API server. Make sure the backend is running on http://127.0.0.1:8000",
-            );
-        }
-    }
-
     private showQuestionForm(questions: Question[]) {
         const formContainer = div({ className: style.questionFormContainer });
 
@@ -594,14 +571,16 @@ export class AIChatPanel extends HTMLElement {
                 const optionsContainer = div({ className: style.questionButtons });
 
                 q.options.forEach((option, optionIndex) => {
-                    const optionValue =
-                        typeof option === "object" && option !== null ? (option as any).value : option;
-                    const optionLabel =
-                        typeof option === "object" && option !== null ? (option as any).label : option;
+                    let optLbl: string;
+                    if (typeof option === "object" && option !== null) {
+                        optLbl = option.label;
+                    } else {
+                        optLbl = option as string;
+                    }
 
                     const optionButton = button({
                         className: style.optionButton,
-                        textContent: optionLabel,
+                        textContent: optLbl,
                         onclick: (e: Event) => {
                             // Just select this option, don't submit yet
                             const btn = e.target as HTMLButtonElement;
@@ -615,14 +594,14 @@ export class AIChatPanel extends HTMLElement {
                             btn.classList.add(style.optionButtonSelected);
 
                             // Store the answer
-                            answersMap.set(index, optionLabel);
+                            answersMap.set(index, optLbl);
                         },
                     }) as HTMLButtonElement;
 
                     // Select first option by default
                     if (optionIndex === 0) {
                         optionButton.classList.add(style.optionButtonSelected);
-                        answersMap.set(index, optionLabel);
+                        answersMap.set(index, optLbl);
                     }
 
                     optionsContainer.appendChild(optionButton);
@@ -649,7 +628,7 @@ export class AIChatPanel extends HTMLElement {
             onclick: () => {
                 // Collect all answers
                 const answers: string[] = [];
-                questions.forEach((q, index) => {
+                questions.forEach((_q, index) => {
                     const value = answersMap.get(index);
                     if (typeof value === "string") {
                         answers.push(value);
@@ -668,8 +647,7 @@ export class AIChatPanel extends HTMLElement {
                     content: answersText,
                 });
 
-                // Clear pending questions and restore normal input
-                this.pendingQuestions = null;
+                // Restore normal input
                 this.inputField.style.display = "";
                 this.sendButton.style.display = "";
 
@@ -765,22 +743,49 @@ export class AIChatPanel extends HTMLElement {
     }
 
     private createMessageElement(message: Message): HTMLDivElement {
-        const messageEl = div({ className: style.message });
+        const row = div({ className: style.messageRow });
 
+        const avatarEl = div({ className: style.avatar });
         if (message.role === "user") {
-            messageEl.classList.add(style.userMessage);
-        } else if (message.role === "loading") {
-            messageEl.classList.add(style.loadingMessage);
+            avatarEl.classList.add(style.userAvatar);
+            avatarEl.textContent = "U";
         } else if (message.role === "tool") {
-            messageEl.classList.add(style.toolMessage);
-        } else if (message.role === "typing") {
-            messageEl.classList.add(style.typingIndicator);
+            avatarEl.classList.add(style.toolAvatar);
+            avatarEl.textContent = "\u2699";
         } else {
-            messageEl.classList.add(style.assistantMessage);
+            avatarEl.classList.add(style.assistantAvatar);
+            avatarEl.textContent = "\u2726";
         }
 
-        messageEl.textContent = message.content;
-        return messageEl;
+        const contentWrapper = div({ className: style.messageContentWrapper });
+
+        const senderName = div({ className: style.senderName });
+        if (message.role === "user") {
+            senderName.textContent = "You";
+        } else if (message.role === "tool") {
+            senderName.textContent = "Tool";
+        } else {
+            senderName.textContent = "CAD Copilot";
+        }
+
+        const contentEl = div({ className: style.messageContent });
+        if (message.role === "user") {
+            contentEl.classList.add(style.userMessage);
+        } else if (message.role === "loading") {
+            contentEl.classList.add(style.loadingMessage);
+        } else if (message.role === "tool") {
+            contentEl.classList.add(style.toolMessage);
+        } else {
+            contentEl.classList.add(style.assistantMessage);
+        }
+        contentEl.textContent = message.content;
+
+        contentWrapper.appendChild(senderName);
+        contentWrapper.appendChild(contentEl);
+        row.appendChild(avatarEl);
+        row.appendChild(contentWrapper);
+
+        return row;
     }
 
     private addMessage(message: Message) {
@@ -788,16 +793,6 @@ export class AIChatPanel extends HTMLElement {
         const messageEl = this.createMessageElement(message);
         this.messagesContainer.appendChild(messageEl);
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
-    }
-
-    private removeLoadingMessage() {
-        if (this.messages.length > 0 && this.messages[this.messages.length - 1].role === "loading") {
-            this.messages.pop();
-            const lastChild = this.messagesContainer.lastElementChild;
-            if (lastChild) {
-                this.messagesContainer.removeChild(lastChild);
-            }
-        }
     }
 
     private removeLastMessage() {
