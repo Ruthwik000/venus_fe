@@ -1,184 +1,347 @@
-# Chili3D
+# Venus 
 
-A browser-based 3D CAD application for online model design and editing.
+> A modern, collaborative 3D CAD platform built for the web
 
-![Screenshot](./screenshots/screenshot.png)
 
 ## Overview
 
-[Chili3D](https://chili3d.com) is an [open-source](https://github.com/xiangechen/chili3d), browser-based 3D CAD (Computer-Aided Design) application built with TypeScript. It achieves near-native performance by compiling OpenCascade (OCCT) to WebAssembly and integrating with Three.js, enabling powerful online modeling, editing, and rendering—all without the need for local installation.
+Venus is a next-generation browser-based 3D CAD platform that revolutionizes collaborative design. Built on TypeScript and WebAssembly, Venus combines the power of OpenCascade with modern web technologies to deliver professional-grade CAD tools, real-time collaboration, AI-powered assistance, and cloud-based project management—all accessible through your browser.
 
-You can access Chili3D online at:
+### Key Features
 
-- Official website: [chili3d.com](https://chili3d.com)
-- Cloudflare deployment: [chili3d.pages.dev](https://chili3d.pages.dev)
-
-## Features
-
-### Modeling Tools
-
-- **Basic Shapes**: Create boxes, cylinders, cones, spheres, pyramids, and more
-- **2D Sketching**: Draw lines, arcs, circles, ellipses, rectangles, polygons, and Bezier curves
-- **Advanced Operations**:
-    - Boolean operations (union, difference, intersection)
-    - Extrusion and revolution
-    - Sweeping and lofting
-    - Offset surfaces
-    - Section creation
-
-### Snapping and Tracking
-
-- **Object Snapping**: Precisely snap to geometric features (points, edges, faces)
-- **Workplane Snapping**: Snap to the current workplane for accurate planar operations
-- **Axis Tracking**: Create objects along tracked axes for precise alignment
-- **Feature Point Detection**: Automatically detect and snap to key geometric features
-- **Tracking Visualization**: Visual guides showing tracking lines and reference points
-
-### Editing Tools
-
-- **Modification**: Chamfer, fillet, trim, break, split
-- **Transformation**: Move, rotate, mirror
-- **Advanced Editing**:
-    - Feature removal
-    - Sub-shape manipulation
-    - Explode compound objects
-
-### Measurement Tools
-
-- Measure angles and lengths
-- Calculate the sum of length, area, and volume
-
-### Document Management
-
-- Create, open, and save documents
-- Full undo/redo stack with transaction history
-- Import/export of industry-standard formats (STEP, IGES, BREP)
-
-### User Interface
-
-- Office-style interface with contextual command organization
-- Hierarchical assembly management with flexible grouping capabilities
-- Dynamic workplane support
-- 3D viewport with camera controls
-- Camera position recall
-
-### Localization
-
-- **Multi-Language Interface**: Built-in internationalization (i18n) supporting seamless adaptation to global user bases
-- **Current Languages**: Chinese & English; contributions for additional languages are welcome
+- **🤖 AI CAD Copilot**: Agentic AI assistant for intelligent design suggestions and automation
+- **👥 Real-time Collaboration**: Work simultaneously with team members on 3D models
+- **☁️ Cloud Storage**: Automatic project sync via Cloudinary with version control
+- **📊 GitHub-Style History**: Track every change with detailed commit-style version history
+- **🏢 Team Management**: Create teams, manage members, and organize projects
+- **🎨 Complete CAD Toolset**: Professional modeling, editing, and analysis tools
+- **📁 Import/Export**: Support for industry-standard formats (STEP, IGES, BREP)
+- **🎭 Parametric Variations**: Create design variations with parametric modeling
+- **⚡ WebAssembly Performance**: Near-native speed using OpenCascade compiled to WASM
+- **🎨 Modern UI**: Clean, professional interface with glassmorphic design
 
 ## Technology Stack
 
-- **Frontend**: TypeScript, Three.js
-- **3D Engine**: OpenCascade (via WebAssembly)
-- **Build Tools**: Rspack
-- **Testing**: Jest
+### Frontend
+- **TypeScript** - Type-safe development
+- **Three.js** - 3D rendering and visualization
+- **Rspack** - Fast build tooling
+- **Biome** - Unified linting and formatting
 
-## Change Log
+### Backend & Services
+- **Firebase** - Authentication and Firestore database
+- **Cloudinary** - Cloud storage for 3D models
+- **WebAssembly** - OpenCascade OCCT for CAD operations
 
-You can view the full change log [here](https://github.com/xiangechen/chili3d/releases).
-
-For Chinese users, you can also browse the [media](https://space.bilibili.com/539380032/lists/3108412?type=season).
+### Architecture
+- **Monorepo Structure** - 12 modular packages
+- **Package-based Organization** - Clean separation of concerns
+- **Modern Web Standards** - ES modules, Web Workers, WebGL
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js
-- npm
+- Node.js (v18 or higher)
+- npm or yarn
+- Git
 
 ### Installation
 
 1. Clone the repository
-
-    ```bash
-    git clone https://github.com/xiangechen/chili3d.git
-    cd chili3d
-    ```
+   ```bash
+   git clone https://github.com/Ruthwik000/venus_fe.git
+   cd venus_fe
+   ```
 
 2. Install dependencies
+   ```bash
+   npm install
+   ```
 
-    ```bash
-    npm install
-    ```
+3. Set up environment variables
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Firebase and Cloudinary credentials
+   ```
 
 ### Development
 
 Start the development server:
 
 ```bash
-npm run dev # Launches at http://localhost:8080
+npm run dev
 ```
+
+The application will be available at `http://localhost:8080`
 
 ### Building
 
-Build the application:
+Build for production:
 
 ```bash
 npm run build
 ```
 
-### Building wasm
+Preview the production build:
 
-if you want to build wasm by yourself, you can use the following commands:
+```bash
+npm run preview
+```
 
-1. Set up WebAssembly dependencies(if you have not installed them yet)
+### Code Quality
 
-    ```bash
-    npm run setup:wasm
-    ```
+Run linting and auto-fix:
 
-2. Build the WebAssembly module:
+```bash
+npm run check
+```
 
-    ```bash
-    npm run build:wasm
-    ```
+Format all code:
 
-## Development Status
+```bash
+npm run format
+```
 
-⚠️ **Early Development Notice**
+### Testing
 
-Chili3D is currently in active alpha development. Key considerations:
+Run all tests:
 
-- Core APIs may undergo breaking changes
-- Essential features are under implementation
-- Documentation is being progressively developed
+```bash
+npm run test
+```
+
+Run tests with coverage:
+
+```bash
+npm run testc
+```
+
+## Project Structure
+
+```
+venus_fe/
+├── packages/
+│   ├── chili-core/          # Core interfaces and utilities
+│   ├── chili-web/           # Web application entry point
+│   ├── chili-ui/            # UI components
+│   ├── chili-three/         # Three.js integration
+│   ├── chili-builder/       # Application builder
+│   ├── chili-controls/      # User controls
+│   ├── chili-storage/       # Data persistence
+│   ├── chili-i18n/          # Internationalization
+│   └── chili-wasm/          # WebAssembly bindings
+├── cpp/                     # C++ source for WASM
+├── public/                  # Static assets
+└── scripts/                 # Build and utility scripts
+```
+
+## Features
+
+### 🤖 AI CAD Copilot
+
+- **Intelligent Design Assistance**: AI-powered suggestions for optimal design patterns
+- **Automated Modeling**: Generate 3D models from natural language descriptions
+- **Design Optimization**: AI-driven recommendations for structural improvements
+- **Smart Constraints**: Automatic constraint detection and application
+- **Pattern Recognition**: Identify and replicate design patterns across models
+
+### 🛠️ Complete CAD Toolset
+
+#### Basic Shapes & Primitives
+- Box, Cylinder, Cone, Sphere, Pyramid, Prism
+- Torus, Wedge, and custom primitives
+- Parametric shape generation
+
+#### 2D Sketching Tools
+- Lines, Arcs, Circles, Ellipses
+- Rectangles, Polygons, Splines
+- Bezier curves and NURBS
+- Constraint-based sketching
+
+#### Advanced Modeling Operations
+- **Boolean Operations**: Union, Difference, Intersection, XOR
+- **Extrusion**: Linear and tapered extrusion with draft angles
+- **Revolution**: Revolve profiles around axes
+- **Sweeping**: Sweep profiles along paths
+- **Lofting**: Create surfaces between multiple profiles
+- **Offset**: Offset surfaces and curves
+- **Thickening**: Add thickness to surfaces
+- **Shelling**: Hollow out solid bodies
+
+#### Editing & Modification Tools
+- **Chamfer & Fillet**: Edge blending with variable radius
+- **Trim & Extend**: Modify curve and surface boundaries
+- **Split & Break**: Divide objects at specified locations
+- **Mirror**: Create symmetric copies
+- **Pattern**: Linear, circular, and custom patterns
+- **Scale & Transform**: Precise transformations with constraints
+- **Feature Removal**: Remove holes, fillets, and other features
+
+#### Analysis & Measurement
+- **Distance Measurement**: Point-to-point, point-to-edge, edge-to-edge
+- **Angle Measurement**: Between edges, faces, and planes
+- **Area Calculation**: Surface area of faces and bodies
+- **Volume Calculation**: Mass properties and volume analysis
+- **Center of Mass**: Calculate geometric and mass centers
+- **Bounding Box**: Get dimensional extents
+- **Curvature Analysis**: Analyze surface curvature
+
+### 👥 Real-time Collaboration
+
+- **Live Presence Indicators**: See who's viewing or editing in real-time
+- **Cursor Tracking**: Watch collaborators' actions as they happen
+- **Comments & Annotations**: Add contextual comments to specific features
+- **Team Chat**: Built-in messaging for project discussions
+- **Activity Feed**: Track all project changes and collaborator actions
+- **Conflict Resolution**: Automatic handling of concurrent edits
+- **Permission Management**: View, comment, or edit access levels
+
+### 🏢 Team Management
+
+- **Create Teams**: Organize users into collaborative workspaces
+- **Role-Based Access**: Owner, Admin, Member, and Viewer roles
+- **Project Organization**: Group projects by team
+- **Member Invitations**: Invite via email with automatic notifications
+- **Team Dashboard**: Overview of team projects and activity
+- **Resource Sharing**: Share libraries and templates across teams
+- **Team Analytics**: Track team productivity and project metrics
+
+### 📊 Project Management
+
+- **Dashboard Overview**: Visual summary of all projects and teams
+- **Version History**: GitHub-style commit history for every save
+  - Track who made changes and when
+  - View detailed change descriptions
+  - Download any previous version
+  - Compare versions side-by-side
+- **Storage Analytics**: Monitor storage usage across all projects
+- **Project Starring**: Quick access to favorite projects
+- **Search & Filter**: Find projects by name, date, or collaborators
+- **Project Templates**: Create and reuse project templates
+- **Bulk Operations**: Manage multiple projects simultaneously
+
+### 🎭 Parametric Modeling
+
+- **Parametric Constraints**: Define relationships between features
+- **Design Variables**: Create adjustable parameters
+- **Equations & Formulas**: Drive dimensions with mathematical expressions
+- **Design Tables**: Generate variations from parameter sets
+- **Configuration Management**: Save and switch between design variants
+- **Update Propagation**: Automatic model updates when parameters change
+- **History-Based Modeling**: Edit feature history to modify designs
+
+### 📁 Import & Export
+
+#### Supported Import Formats
+- **STEP** (.step, .stp) - Industry standard for CAD data exchange
+- **IGES** (.iges, .igs) - Legacy CAD format support
+- **BREP** (.brep) - OpenCascade native format
+- **STL** (.stl) - For 3D printing and mesh operations
+- **OBJ** (.obj) - Mesh geometry with materials
+
+#### Supported Export Formats
+- **STEP** (.step, .stp) - For CAD software interoperability
+- **IGES** (.iges, .igs) - Legacy system compatibility
+- **BREP** (.brep) - Native format with full fidelity
+- **STL** (.stl) - For 3D printing and manufacturing
+- **OBJ** (.obj) - For rendering and visualization
+- **JSON** (.json) - Venus native format with metadata
+
+#### Import/Export Features
+- **Batch Processing**: Import/export multiple files
+- **Format Conversion**: Convert between supported formats
+- **Validation**: Automatic geometry validation on import
+- **Repair Tools**: Fix common geometry issues
+- **Metadata Preservation**: Maintain design intent and annotations
+- **Assembly Support**: Import/export multi-part assemblies
+
+### 🎨 User Interface
+
+- **Modern Landing Page**: Animated WebGL shader background
+- **Responsive Design**: Optimized for desktop and tablet
+- **Dark Theme**: Professional UI optimized for extended use
+- **Customizable Workspace**: Arrange panels and toolbars
+- **Keyboard Shortcuts**: Efficient workflow with hotkeys
+- **Context Menus**: Right-click access to relevant tools
+- **Command Palette**: Quick access to all functions
+- **Undo/Redo**: Unlimited history with transaction tracking
+- **Multi-viewport**: Work with multiple views simultaneously
+
+### ☁️ Cloud Features
+
+- **Automatic Sync**: Changes saved to cloud in real-time
+- **Offline Mode**: Continue working without internet
+- **Cross-device Access**: Access projects from any device
+- **Backup & Recovery**: Automatic backups with point-in-time recovery
+- **CDN Delivery**: Fast loading via global content delivery network
+- **Secure Storage**: Encrypted storage with Cloudinary
+- **Storage Quotas**: Track and manage storage limits
+
+## WebAssembly Build
+
+To build the WebAssembly module from C++ source:
+
+1. Set up WASM dependencies (first time only):
+   ```bash
+   npm run setup:wasm
+   ```
+
+2. Build the WASM module:
+   ```bash
+   npm run build:wasm
+   ```
 
 ## Contributing
 
-We welcome contributions in the form of code, bug reports, or feedback. Please feel free to submit pull requests or open issues.
+We welcome contributions! Please follow these guidelines:
 
-## Contact
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Run `npm run check` before committing
+4. Commit with conventional commit messages
+5. Push to your branch
+6. Open a Pull Request
 
-- **Discussions**: Join our [GitHub discussions](https://github.com/xiangechen/chili3d/discussions) for general chat or questions
-- **Issues**: Use [GitHub issues](https://github.com/xiangechen/chili3d/issues) to report public suggestions or bugs
-- **Email**: Contact us privately at xiangetg@msn.cn
+### Commit Message Format
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+```
+
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+Example: `feat(ui): add project history dialog`
 
 ## License
 
-Distributed under the GNU Affero General Public License v3.0 (AGPL-3.0). For commercial licensing options, contact xiangetg@msn.cn
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
 
-Full license details: [LICENSE](LICENSE)
+For commercial licensing options, please contact the maintainers.
 
-## Warning
+See [LICENSE](LICENSE) for full details.
 
-Chili3d uses [Microsoft Clarity](https://clarity.microsoft.com) for growth analytics. To disable data collection:
+## Acknowledgments
 
-1. Open public/index.html
-2. Delete lines containing this code:
+Built on top of [Chili3D](https://github.com/xiangechen/chili3d) - An open-source 3D CAD framework
 
-```
-<script type="text/javascript">
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "***");
-</script>
-```
+Special thanks to:
+- OpenCascade for the CAD kernel
+- Three.js community for 3D rendering
+- Firebase for backend services
+- Cloudinary for cloud storage
 
-This software is provided "AS IS," and the authors and contributors hereby disclaim all express and implied warranties. The user shall bear full responsibility for any and all risks and potential consequences arising from the use of this software. Such risks and consequences include, but are not limited to:
+## Support
 
-1. Data loss, system failures, or any direct or indirect damages;
-2. Conduct violating applicable laws or regulations resulting from software usage and its consequences;
-3. All liabilities arising from the software’s use for illegal purposes or activities.
+- **Issues**: [GitHub Issues](https://github.com/Ruthwik000/venus_fe/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Ruthwik000/venus_fe/discussions)
+
+## Disclaimer
+
+This software is provided "AS IS" without warranty of any kind. Users assume all risks associated with its use. The authors and contributors disclaim all liability for any damages, data loss, or consequences arising from the use of this software.
+
+---
+
+Made with ❤️ by the ProteinX team
