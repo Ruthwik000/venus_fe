@@ -18,12 +18,7 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
         <!-- Sidebar -->
         <aside class="modern-sidebar">
             <div class="sidebar-brand">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                </svg>
+                <img src="/favicon.svg" alt="Venus" style="width: 32px; height: 32px; filter: brightness(0) invert(1);" />
                 <span>Venus</span>
             </div>
             
