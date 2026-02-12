@@ -2,7 +2,367 @@
 // See LICENSE file in the project root for full license information.
 
 import { auth, authService, db, type IApplication, type IRouter, projectService } from "chili-core";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+
+// ─── Custom Dialog System ───────────────────────────────────────────────
+
+function showCustomPrompt(title: string, defaultValue: string = ""): Promise<string | null> {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease;
+        `;
+
+        const dialog = document.createElement("div");
+        dialog.style.cssText = `
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.98), rgba(20, 20, 20, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            min-width: 400px;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        `;
+
+        dialog.innerHTML = `
+            <h3 style="color: #fff; font-size: 1.25rem; margin: 0 0 20px 0; font-weight: 500;">${title}</h3>
+            <input type="text" id="custom-prompt-input" value="${defaultValue}" style="
+                width: 100%;
+                padding: 12px 16px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                color: #fff;
+                font-size: 0.9375rem;
+                outline: none;
+                transition: all 0.2s ease;
+                box-sizing: border-box;
+            " />
+            <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+                <button id="custom-prompt-cancel" style="
+                    padding: 10px 24px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 8px;
+                    color: #fff;
+                    font-size: 0.9375rem;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                ">Cancel</button>
+                <button id="custom-prompt-ok" style="
+                    padding: 10px 24px;
+                    background: linear-gradient(135deg, #10B981, #059669);
+                    border: none;
+                    border-radius: 8px;
+                    color: #fff;
+                    font-size: 0.9375rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                ">Create</button>
+            </div>
+        `;
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        const input = document.getElementById("custom-prompt-input") as HTMLInputElement;
+        const okBtn = document.getElementById("custom-prompt-ok");
+        const cancelBtn = document.getElementById("custom-prompt-cancel");
+
+        input.focus();
+        input.select();
+
+        // Hover effects
+        okBtn?.addEventListener("mouseenter", () => {
+            okBtn.style.transform = "translateY(-1px)";
+            okBtn.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.4)";
+        });
+        okBtn?.addEventListener("mouseleave", () => {
+            okBtn.style.transform = "";
+            okBtn.style.boxShadow = "";
+        });
+
+        cancelBtn?.addEventListener("mouseenter", () => {
+            cancelBtn.style.background = "rgba(255, 255, 255, 0.08)";
+        });
+        cancelBtn?.addEventListener("mouseleave", () => {
+            cancelBtn.style.background = "rgba(255, 255, 255, 0.05)";
+        });
+
+        input.addEventListener("focus", () => {
+            input.style.borderColor = "#10B981";
+            input.style.background = "rgba(255, 255, 255, 0.08)";
+        });
+        input.addEventListener("blur", () => {
+            input.style.borderColor = "rgba(255, 255, 255, 0.1)";
+            input.style.background = "rgba(255, 255, 255, 0.05)";
+        });
+
+        const cleanup = () => {
+            overlay.style.animation = "fadeOut 0.2s ease";
+            setTimeout(() => overlay.remove(), 200);
+        };
+
+        okBtn?.addEventListener("click", () => {
+            resolve(input.value.trim() || null);
+            cleanup();
+        });
+
+        cancelBtn?.addEventListener("click", () => {
+            resolve(null);
+            cleanup();
+        });
+
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                resolve(input.value.trim() || null);
+                cleanup();
+            } else if (e.key === "Escape") {
+                resolve(null);
+                cleanup();
+            }
+        });
+
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) {
+                resolve(null);
+                cleanup();
+            }
+        });
+    });
+}
+
+function showCustomAlert(message: string, type: "success" | "error" | "info" = "info"): Promise<void> {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease;
+        `;
+
+        const colors = {
+            success: { icon: "#10B981", bg: "rgba(16, 185, 129, 0.1)" },
+            error: { icon: "#ef4444", bg: "rgba(239, 68, 68, 0.1)" },
+            info: { icon: "#3b82f6", bg: "rgba(59, 130, 246, 0.1)" },
+        };
+
+        const icons = {
+            success: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />`,
+            error: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />`,
+            info: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />`,
+        };
+
+        const dialog = document.createElement("div");
+        dialog.style.cssText = `
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.98), rgba(20, 20, 20, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            min-width: 400px;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        `;
+
+        dialog.innerHTML = `
+            <div style="
+                width: 64px;
+                height: 64px;
+                margin: 0 auto 20px;
+                background: ${colors[type].bg};
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <svg width="32" height="32" fill="none" stroke="${colors[type].icon}" viewBox="0 0 24 24">
+                    ${icons[type]}
+                </svg>
+            </div>
+            <p style="color: #fff; font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">${message}</p>
+            <button id="custom-alert-ok" style="
+                padding: 10px 32px;
+                background: linear-gradient(135deg, #10B981, #059669);
+                border: none;
+                border-radius: 8px;
+                color: #fff;
+                font-size: 0.9375rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            ">OK</button>
+        `;
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        const okBtn = document.getElementById("custom-alert-ok");
+
+        okBtn?.addEventListener("mouseenter", () => {
+            okBtn.style.transform = "translateY(-1px)";
+            okBtn.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.4)";
+        });
+        okBtn?.addEventListener("mouseleave", () => {
+            okBtn.style.transform = "";
+            okBtn.style.boxShadow = "";
+        });
+
+        const cleanup = () => {
+            overlay.style.animation = "fadeOut 0.2s ease";
+            setTimeout(() => {
+                overlay.remove();
+                resolve();
+            }, 200);
+        };
+
+        okBtn?.addEventListener("click", cleanup);
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) cleanup();
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === "Escape") cleanup();
+        });
+    });
+}
+
+function showCustomConfirm(message: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease;
+        `;
+
+        const dialog = document.createElement("div");
+        dialog.style.cssText = `
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.98), rgba(20, 20, 20, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            min-width: 400px;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        `;
+
+        dialog.innerHTML = `
+            <div style="
+                width: 64px;
+                height: 64px;
+                margin: 0 auto 20px;
+                background: rgba(239, 68, 68, 0.1);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <svg width="32" height="32" fill="none" stroke="#ef4444" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <p style="color: #fff; font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">${message}</p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button id="custom-confirm-cancel" style="
+                    padding: 10px 24px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 8px;
+                    color: #fff;
+                    font-size: 0.9375rem;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                ">Cancel</button>
+                <button id="custom-confirm-ok" style="
+                    padding: 10px 24px;
+                    background: linear-gradient(135deg, #ef4444, #dc2626);
+                    border: none;
+                    border-radius: 8px;
+                    color: #fff;
+                    font-size: 0.9375rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                ">Confirm</button>
+            </div>
+        `;
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        const okBtn = document.getElementById("custom-confirm-ok");
+        const cancelBtn = document.getElementById("custom-confirm-cancel");
+
+        okBtn?.addEventListener("mouseenter", () => {
+            okBtn.style.transform = "translateY(-1px)";
+            okBtn.style.boxShadow = "0 4px 12px rgba(239, 68, 68, 0.4)";
+        });
+        okBtn?.addEventListener("mouseleave", () => {
+            okBtn.style.transform = "";
+            okBtn.style.boxShadow = "";
+        });
+
+        cancelBtn?.addEventListener("mouseenter", () => {
+            cancelBtn.style.background = "rgba(255, 255, 255, 0.08)";
+        });
+        cancelBtn?.addEventListener("mouseleave", () => {
+            cancelBtn.style.background = "rgba(255, 255, 255, 0.05)";
+        });
+
+        const cleanup = () => {
+            overlay.style.animation = "fadeOut 0.2s ease";
+            setTimeout(() => overlay.remove(), 200);
+        };
+
+        okBtn?.addEventListener("click", () => {
+            resolve(true);
+            cleanup();
+        });
+
+        cancelBtn?.addEventListener("click", () => {
+            resolve(false);
+            cleanup();
+        });
+
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) {
+                resolve(false);
+                cleanup();
+            }
+        });
+    });
+}
 
 export function renderDashboard(_app: IApplication, router: IRouter): void {
     const container = document.getElementById("app") || document.body;
@@ -119,6 +479,12 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
                 <!-- Recent Projects -->
                 <div class="section-header-modern">
                     <h2>Recent Projects</h2>
+                    <button id="new-project-overview" class="btn-modern-primary">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        New Project
+                    </button>
                 </div>
                 <div class="projects-modern-grid" id="recent-projects-grid">
                     <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;">
@@ -474,6 +840,10 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
     });
 
     document.getElementById("new-project")?.addEventListener("click", async () => {
+        await createNewProject(router);
+    });
+
+    document.getElementById("new-project-overview")?.addEventListener("click", async () => {
         await createNewProject(router);
     });
 
@@ -1442,7 +1812,7 @@ async function showProjectHistoryDialog(project: any, router: IRouter): Promise<
 
 async function createNewProject(router: IRouter): Promise<void> {
     try {
-        const projectName = prompt("Enter project name:", `Project-${Date.now()}`);
+        const projectName = await showCustomPrompt("Enter project name:", `Project-${Date.now()}`);
         if (!projectName) return;
 
         const project = await projectService.createProject(projectName);
@@ -1452,7 +1822,7 @@ async function createNewProject(router: IRouter): Promise<void> {
         router.navigate(`/editor?sessionId=${project.sessionId}`);
     } catch (error) {
         console.error("Failed to create project:", error);
-        alert("Failed to create project. Please try again.");
+        await showCustomAlert("Failed to create project. Please try again.", "error");
     }
 }
 
@@ -1527,15 +1897,45 @@ async function loadOverview(router: IRouter): Promise<void> {
 
         if (recentProjects.length === 0) {
             grid.innerHTML = `
-                <div class="project-glass-card" style="display:flex;align-items:center;justify-content:center;min-height:150px;cursor:default;">
+                <div class="project-glass-card" id="create-first-project-card" style="display:flex;align-items:center;justify-content:center;min-height:200px;cursor:pointer;transition:all 0.3s ease;border:2px dashed rgba(255,255,255,0.1);">
                     <div style="text-align:center;color:#888;">
-                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin:0 auto 12px;">
+                        <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin:0 auto 16px;opacity:0.4;transition:all 0.3s ease;">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
                         </svg>
-                        <p>No projects yet. Go to Projects tab to create one.</p>
+                        <h3 style="color:#fff;margin:0 0 8px 0;font-size:18px;transition:all 0.3s ease;">No projects yet</h3>
+                        <p style="margin:0;transition:all 0.3s ease;">Click to create your first project</p>
                     </div>
                 </div>
             `;
+
+            // Add click handler and hover effects for the empty state card
+            const card = document.getElementById("create-first-project-card");
+            card?.addEventListener("click", async () => {
+                await createNewProject(router);
+            });
+
+            card?.addEventListener("mouseenter", () => {
+                card.style.background = "rgba(255, 255, 255, 0.03)";
+                card.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                const svg = card.querySelector("svg");
+                const h3 = card.querySelector("h3");
+                const p = card.querySelector("p");
+                if (svg) (svg as SVGElement).style.opacity = "0.6";
+                if (h3) (h3 as HTMLElement).style.color = "#10B981";
+                if (p) (p as HTMLElement).style.color = "#aaa";
+            });
+
+            card?.addEventListener("mouseleave", () => {
+                card.style.background = "";
+                card.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                const svg = card.querySelector("svg");
+                const h3 = card.querySelector("h3");
+                const p = card.querySelector("p");
+                if (svg) (svg as SVGElement).style.opacity = "0.4";
+                if (h3) (h3 as HTMLElement).style.color = "#fff";
+                if (p) (p as HTMLElement).style.color = "#888";
+            });
+
             return;
         }
 
@@ -1651,8 +2051,60 @@ async function loadProjectsTab(router: IRouter): Promise<void> {
                 `;
             } else {
                 collabGrid.innerHTML = "";
-                // Render shared projects (projects shared with me)
+                // Render shared projects (projects shared with me) - fetch owner names and project names
                 for (const share of sharedProjects) {
+                    console.log("Share data:", share);
+
+                    // Try to get owner name/email in order of preference:
+                    // 1. ownerEmail from share (if available)
+                    // 2. displayName from users collection
+                    // 3. email from users collection
+                    // 4. fallback to userId
+
+                    let ownerName = "Unknown User";
+
+                    // Check if share has ownerEmail field (new shares will have this)
+                    if ((share as any).ownerEmail) {
+                        ownerName = (share as any).ownerEmail.split("@")[0];
+                        console.log("Using ownerEmail from share:", ownerName);
+                    } else {
+                        // Fallback: try to fetch from users collection
+                        try {
+                            const ownerDoc = await getDoc(doc(db, "users", share.sharedBy));
+                            if (ownerDoc.exists()) {
+                                const ownerData = ownerDoc.data();
+                                ownerName =
+                                    ownerData.displayName || ownerData.email?.split("@")[0] || share.sharedBy;
+                                console.log("Using data from users collection:", ownerName);
+                            } else {
+                                console.log("Owner document not found, using userId");
+                                ownerName = share.sharedBy;
+                            }
+                        } catch (error) {
+                            console.error("Failed to fetch owner name:", error);
+                            ownerName = share.sharedBy;
+                        }
+                    }
+
+                    (share as any).ownerName = ownerName;
+
+                    // Fetch actual project name from Firestore
+                    let projectName = "Shared Project";
+                    try {
+                        const projectDoc = await getDoc(
+                            doc(db, "users", share.sharedBy, "projects", share.projectId),
+                        );
+                        if (projectDoc.exists()) {
+                            const projectData = projectDoc.data();
+                            projectName = projectData.projectName || "Shared Project";
+                            console.log("Fetched project name:", projectName);
+                        }
+                    } catch (error) {
+                        console.error("Failed to fetch project name:", error);
+                    }
+
+                    (share as any).projectName = projectName;
+                    console.log("Final owner name:", ownerName, "Project name:", projectName);
                     const card = createSharedProjectCard(share, router);
                     collabGrid.appendChild(card);
                 }
@@ -1798,6 +2250,11 @@ function createSharedProjectCard(share: any, router: IRouter): HTMLElement {
     const card = document.createElement("div");
     card.className = "project-glass-card";
     card.style.position = "relative";
+
+    // Get owner name and project name
+    const ownerName = share.ownerName || "Unknown User";
+    const projectName = share.projectName || "Shared Project";
+
     card.innerHTML = `
         <div class="project-preview">
             <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1805,38 +2262,58 @@ function createSharedProjectCard(share: any, router: IRouter): HTMLElement {
             </svg>
         </div>
         <div class="project-info-modern">
-            <h3>Shared Project</h3>
+            <h3>${escapeHtml(projectName)}</h3>
             <p class="project-time">Shared with you</p>
             <div class="project-tags">
-                <span class="tag-modern">${share.permission}</span>
+                <span class="tag-modern" style="background:rgba(16,185,129,0.15);color:#10B981;border:1px solid rgba(16,185,129,0.3);">Collaborator</span>
             </div>
             <div class="project-history" style="margin-top:8px;font-size:12px;color:#888;">
-                <div>Shared by ${escapeHtml(share.sharedBy)}</div>
+                <div>Shared by ${escapeHtml(ownerName)}</div>
             </div>
         </div>
         <div class="project-actions" style="position:absolute;top:8px;right:8px;">
-            <button class="project-open-btn" title="Open project" style="background:rgba(59,130,246,0.15);border:none;color:#3b82f6;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+            <button class="project-exit-btn" title="Leave project" style="background:rgba(239,68,68,0.15);border:none;color:#ef4444;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
             </button>
         </div>
     `;
 
-    // Open button
-    const openBtn = card.querySelector(".project-open-btn");
-    openBtn?.addEventListener("click", (e) => {
+    // Exit button
+    const exitBtn = card.querySelector(".project-exit-btn");
+    exitBtn?.addEventListener("click", async (e) => {
         e.stopPropagation();
-        localStorage.setItem("currentSessionId", share.projectId);
-        localStorage.setItem("currentProjectName", "Shared Project");
-        localStorage.setItem("currentProjectOwnerId", share.sharedBy);
-        router.navigate(`/editor?sessionId=${share.projectId}&owner=${share.sharedBy}`);
+
+        const confirmed = await showCustomConfirm(
+            `Leave "${projectName}"? You will no longer have access to this project.`,
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const { shareService } = await import("chili-core");
+            await shareService.leaveProject(share.projectId, share.sharedBy);
+            card.remove();
+            showCustomAlert("Left project successfully", "success");
+        } catch (err) {
+            console.error("Failed to leave project:", err);
+            showCustomAlert("Failed to leave project", "error");
+        }
+    });
+
+    // Hover effect for exit button
+    exitBtn?.addEventListener("mouseenter", () => {
+        (exitBtn as HTMLElement).style.background = "rgba(239,68,68,0.25)";
+    });
+    exitBtn?.addEventListener("mouseleave", () => {
+        (exitBtn as HTMLElement).style.background = "rgba(239,68,68,0.15)";
     });
 
     // Click card to open
     card.addEventListener("click", () => {
         localStorage.setItem("currentSessionId", share.projectId);
-        localStorage.setItem("currentProjectName", "Shared Project");
+        localStorage.setItem("currentProjectName", projectName);
         localStorage.setItem("currentProjectOwnerId", share.sharedBy);
         router.navigate(`/editor?sessionId=${share.projectId}&owner=${share.sharedBy}`);
     });
@@ -2263,25 +2740,16 @@ async function openTeamManagement(team: any): Promise<void> {
             const availableProjects = projects.filter((p) => !team.projectIds.includes(p.sessionId));
 
             if (availableProjects.length === 0) {
-                alert("No available projects to add. All your projects are already in this team.");
+                await showCustomAlert(
+                    "No available projects to add. All your projects are already in this team.",
+                    "info",
+                );
                 return;
             }
 
-            // Create a simple selection dialog
-            const projectNames = availableProjects.map((p, i) => `${i + 1}. ${p.projectName}`).join("\n");
-            const selection = prompt(
-                `Select a project to add to the team:\n\n${projectNames}\n\nEnter the number:`,
-            );
-
-            if (!selection) return;
-
-            const index = parseInt(selection) - 1;
-            if (isNaN(index) || index < 0 || index >= availableProjects.length) {
-                alert("Invalid selection");
-                return;
-            }
-
-            const selectedProject = availableProjects[index];
+            // Show custom project selection dialog
+            const selectedProject = await showProjectSelectionDialog(availableProjects);
+            if (!selectedProject) return;
 
             // Add project to team
             const { teamService } = await import("chili-core");
@@ -2294,13 +2762,16 @@ async function openTeamManagement(team: any): Promise<void> {
                 await updateDoc(projectRef, { teamId: team.id });
             }
 
-            alert(`Project "${selectedProject.projectName}" added to team successfully!`);
+            await showCustomAlert(
+                `Project "${selectedProject.projectName}" added to team successfully!`,
+                "success",
+            );
 
             // Reload projects list
             await loadTeamProjects(team);
         } catch (error) {
             console.error("Failed to add project:", error);
-            alert("Failed to add project. Please try again.");
+            await showCustomAlert("Failed to add project. Please try again.", "error");
         }
     };
 
@@ -2308,6 +2779,142 @@ async function openTeamManagement(team: any): Promise<void> {
     const newAddProjectBtn = addProjectBtn?.cloneNode(true) as HTMLElement;
     addProjectBtn?.parentNode?.replaceChild(newAddProjectBtn, addProjectBtn);
     newAddProjectBtn?.addEventListener("click", handleAddProject);
+}
+
+function showProjectSelectionDialog(projects: any[]): Promise<any | null> {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease;
+        `;
+
+        const dialog = document.createElement("div");
+        dialog.style.cssText = `
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.98), rgba(20, 20, 20, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            min-width: 500px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        `;
+
+        const projectList = projects
+            .map(
+                (project, index) => `
+            <div class="project-selection-item" data-index="${index}" style="
+                padding: 16px;
+                margin: 8px 0;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            ">
+                <div style="
+                    width: 32px;
+                    height: 32px;
+                    background: linear-gradient(135deg, #10B981, #059669);
+                    border-radius: 6px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #fff;
+                    font-weight: 600;
+                    font-size: 14px;
+                ">${index + 1}</div>
+                <div style="flex: 1;">
+                    <div style="color: #fff; font-weight: 500; margin-bottom: 4px;">${escapeHtml(project.projectName)}</div>
+                    <div style="color: #888; font-size: 12px;">Click to select</div>
+                </div>
+            </div>
+        `,
+            )
+            .join("");
+
+        dialog.innerHTML = `
+            <h3 style="color: #fff; font-size: 1.25rem; margin: 0 0 20px 0; font-weight: 500;">Select a project to add to the team</h3>
+            <div id="project-list-container">
+                ${projectList}
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+                <button id="project-select-cancel" style="
+                    padding: 10px 24px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 8px;
+                    color: #fff;
+                    font-size: 0.9375rem;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                ">Cancel</button>
+            </div>
+        `;
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        // Add hover effects to project items
+        const projectItems = dialog.querySelectorAll(".project-selection-item");
+        projectItems.forEach((item) => {
+            item.addEventListener("mouseenter", () => {
+                (item as HTMLElement).style.background = "rgba(16, 185, 129, 0.15)";
+                (item as HTMLElement).style.borderColor = "#10B981";
+                (item as HTMLElement).style.transform = "translateX(4px)";
+            });
+            item.addEventListener("mouseleave", () => {
+                (item as HTMLElement).style.background = "rgba(255, 255, 255, 0.05)";
+                (item as HTMLElement).style.borderColor = "rgba(255, 255, 255, 0.1)";
+                (item as HTMLElement).style.transform = "";
+            });
+            item.addEventListener("click", () => {
+                const index = parseInt((item as HTMLElement).getAttribute("data-index") || "0");
+                resolve(projects[index]);
+                cleanup();
+            });
+        });
+
+        const cancelBtn = document.getElementById("project-select-cancel");
+        cancelBtn?.addEventListener("mouseenter", () => {
+            cancelBtn.style.background = "rgba(255, 255, 255, 0.08)";
+        });
+        cancelBtn?.addEventListener("mouseleave", () => {
+            cancelBtn.style.background = "rgba(255, 255, 255, 0.05)";
+        });
+
+        const cleanup = () => {
+            overlay.style.animation = "fadeOut 0.2s ease";
+            setTimeout(() => overlay.remove(), 200);
+        };
+
+        cancelBtn?.addEventListener("click", () => {
+            resolve(null);
+            cleanup();
+        });
+
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) {
+                resolve(null);
+                cleanup();
+            }
+        });
+    });
 }
 
 async function loadTeamMembers(team: any): Promise<void> {
