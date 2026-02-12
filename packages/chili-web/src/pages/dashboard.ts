@@ -95,13 +95,13 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
 
                     <div class="stat-glass-card">
                         <div class="stat-header">
-                            <span class="stat-label">Active Hours</span>
+                            <span class="stat-label">Storage Used</span>
                             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                             </svg>
                         </div>
-                        <div class="stat-value">--</div>
-                        <div class="stat-trend neutral">--</div>
+                        <div class="stat-value" id="storage-used-value">--</div>
+                        <div class="stat-trend neutral" id="storage-used-trend">Calculating...</div>
                     </div>
 
                     <div class="stat-glass-card">
@@ -1203,6 +1203,52 @@ async function createNewProject(router: IRouter): Promise<void> {
 
 // ─── Overview Tab ───────────────────────────────────────────────────────
 
+async function calculateStorageUsage(projects: any[]): Promise<void> {
+    const storageValueEl = document.getElementById("storage-used-value");
+    const storageTrendEl = document.getElementById("storage-used-trend");
+
+    if (!storageValueEl || !storageTrendEl) return;
+
+    try {
+        let totalBytes = 0;
+        let filesProcessed = 0;
+
+        // Fetch file sizes from Cloudinary URLs
+        for (const project of projects) {
+            if (project.fileUrl) {
+                try {
+                    const response = await fetch(project.fileUrl, { method: "HEAD" });
+                    const contentLength = response.headers.get("content-length");
+                    if (contentLength) {
+                        totalBytes += parseInt(contentLength, 10);
+                        filesProcessed++;
+                    }
+                } catch (error) {
+                    console.warn(`Failed to fetch size for project ${project.projectName}:`, error);
+                }
+            }
+        }
+
+        // Format bytes to human-readable format
+        const formatBytes = (bytes: number): string => {
+            if (bytes === 0) return "0 B";
+            const k = 1024;
+            const sizes = ["B", "KB", "MB", "GB"];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${(bytes / k ** i).toFixed(2)} ${sizes[i]}`;
+        };
+
+        storageValueEl.textContent = formatBytes(totalBytes);
+        storageTrendEl.textContent = `${filesProcessed} of ${projects.length} projects`;
+        storageTrendEl.className = "stat-trend neutral";
+    } catch (error) {
+        console.error("Failed to calculate storage:", error);
+        storageValueEl.textContent = "Error";
+        storageTrendEl.textContent = "Unable to calculate";
+        storageTrendEl.className = "stat-trend neutral";
+    }
+}
+
 async function loadOverview(router: IRouter): Promise<void> {
     try {
         const projects = await projectService.getProjects();
@@ -1215,6 +1261,9 @@ async function loadOverview(router: IRouter): Promise<void> {
         const teamsCount = document.getElementById("teams-count");
         if (totalCount) totalCount.textContent = String(projects.length + sharedProjects.length);
         if (teamsCount) teamsCount.textContent = String(teams.length);
+
+        // Calculate storage usage
+        calculateStorageUsage(projects);
 
         // Load recent projects (last 6)
         const recentProjects = projects.slice(0, 6);
