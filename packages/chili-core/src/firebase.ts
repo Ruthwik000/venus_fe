@@ -391,6 +391,8 @@ export const projectService: ProjectService = {
             const data = docSnap.data() as ProjectData;
             return {
                 ...data,
+                // Ensure userId is always set (for backwards compatibility with old projects)
+                userId: data.userId || user.uid,
                 // Convert Firestore timestamps to JS dates for UI
                 createdDate: data.createdDate?.toDate?.() ?? new Date(),
                 lastModified: data.lastModified?.toDate?.() ?? new Date(),
@@ -409,6 +411,8 @@ export const projectService: ProjectService = {
         const data = snap.data() as ProjectData;
         return {
             ...data,
+            // Ensure userId is always set (for backwards compatibility with old projects)
+            userId: data.userId || user.uid,
             createdDate: data.createdDate?.toDate?.() ?? new Date(),
             lastModified: data.lastModified?.toDate?.() ?? new Date(),
         };

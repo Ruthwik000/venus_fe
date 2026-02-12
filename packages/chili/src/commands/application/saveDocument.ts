@@ -75,6 +75,13 @@ export class SaveDocument implements ICommand {
                             Logger.info("✓ Updated Firestore");
 
                             // Add to project history
+                            console.log("=== ADDING TO HISTORY ===");
+                            console.log("sessionId:", sessionId);
+                            console.log("ownerId:", ownerId);
+                            console.log("document.name:", document.name);
+                            console.log("uploadResult.secure_url:", uploadResult.secure_url);
+                            console.log("Path: users/" + ownerId + "/projects/" + sessionId + "/history");
+
                             await projectHistoryService.addChange(
                                 sessionId,
                                 ownerId,
@@ -82,6 +89,7 @@ export class SaveDocument implements ICommand {
                                 `Updated project: ${document.name}`,
                                 uploadResult.secure_url,
                             );
+                            console.log("✓ Added to project history successfully");
                             Logger.info("✓ Added to project history");
 
                             Logger.info("✓✓✓ Project saved to cloud successfully ✓✓✓");

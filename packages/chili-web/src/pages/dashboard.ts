@@ -1270,17 +1270,25 @@ async function showProjectHistoryDialog(project: any, router: IRouter): Promise<
         let history = [];
 
         console.log("=== HISTORY DEBUG ===");
+        console.log("Project data:", project);
         console.log("Project sessionId:", project.sessionId);
         console.log("Project userId:", project.userId);
+        console.log("Project projectName:", project.projectName);
         console.log("=====================");
 
         try {
+            console.log("Attempting to load history from Firestore...");
+            console.log("Path: users/" + project.userId + "/projects/" + project.sessionId + "/history");
             history = await projectHistoryService.getHistory(project.sessionId, project.userId);
-            console.log("History loaded successfully:", history.length, "entries");
-            console.log("History data:", history);
+            console.log("✓ History loaded successfully:", history.length, "entries");
+            if (history.length > 0) {
+                console.log("First history entry:", history[0]);
+            }
         } catch (historyError: any) {
             // If the error is about missing collection/permissions, treat as empty history
-            console.warn("Could not load history (may not exist yet):", historyError);
+            console.error("✗ Failed to load history:", historyError);
+            console.error("Error code:", historyError.code);
+            console.error("Error message:", historyError.message);
             history = [];
         }
 
