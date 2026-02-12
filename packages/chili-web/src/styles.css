@@ -1893,6 +1893,33 @@ body {
     font-weight: 500;
 }
 
+.project-star-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.project-delete-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 107, 107, 0.2) !important;
+    border-color: rgba(255, 107, 107, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .modern-sidebar {
@@ -2180,7 +2207,7 @@ body {
 }
 
 .hero-btn-primary {
-    padding: 16px 48px;
+    padding: 12px 32px;
     background: rgba(16, 185, 129, 0.2);
     color: white;
     border: 1px solid rgba(16, 185, 129, 0.4);
@@ -2205,8 +2232,8 @@ body {
     background: transparent;
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 12px;
-    font-size: 16px;
+    border-radius: 16px;
+    font-size: 18px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s;

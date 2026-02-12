@@ -18,12 +18,7 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
         <!-- Sidebar -->
         <aside class="modern-sidebar">
             <div class="sidebar-brand">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                </svg>
+                <img src="/favicon.svg" alt="Venus" style="width: 32px; height: 32px; filter: brightness(0) invert(1);" />
                 <span>Venus</span>
             </div>
             
@@ -100,13 +95,13 @@ export function renderDashboard(_app: IApplication, router: IRouter): void {
 
                     <div class="stat-glass-card">
                         <div class="stat-header">
-                            <span class="stat-label">Active Hours</span>
+                            <span class="stat-label">Storage Used</span>
                             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                             </svg>
                         </div>
-                        <div class="stat-value">--</div>
-                        <div class="stat-trend neutral">--</div>
+                        <div class="stat-value" id="storage-used-value">--</div>
+                        <div class="stat-trend neutral" id="storage-used-trend">Calculating...</div>
                     </div>
 
                     <div class="stat-glass-card">
@@ -1190,6 +1185,261 @@ function escapeHtml(str: string): string {
     return div.innerHTML;
 }
 
+async function showProjectHistoryDialog(project: any, router: IRouter): Promise<void> {
+    // Create dialog overlay
+    const overlay = document.createElement("div");
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease;
+    `;
+
+    const dialog = document.createElement("div");
+    dialog.style.cssText = `
+        background: rgba(20, 20, 20, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    `;
+
+    dialog.innerHTML = `
+        <div style="padding: 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="margin: 0 0 8px 0; font-size: 1.5rem; color: white; display: flex; align-items: center; gap: 12px;">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Edit History
+                </h2>
+                <p style="margin: 0; color: #888; font-size: 0.875rem;">${escapeHtml(project.projectName)}</p>
+            </div>
+            <button id="close-history-dialog" style="background: transparent; border: none; color: #888; cursor: pointer; font-size: 28px; padding: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
+        </div>
+        
+        <div id="history-content" style="flex: 1; overflow-y: auto; padding: 24px;">
+            <div style="text-align: center; color: #888; padding: 40px;">
+                <div class="loading-spinner" style="width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
+                Loading history...
+            </div>
+        </div>
+    `;
+
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    // Close button
+    const closeBtn = dialog.querySelector("#close-history-dialog");
+    closeBtn?.addEventListener("click", () => {
+        overlay.remove();
+    });
+
+    closeBtn?.addEventListener("mouseenter", () => {
+        (closeBtn as HTMLElement).style.background = "rgba(255, 255, 255, 0.1)";
+        (closeBtn as HTMLElement).style.color = "white";
+    });
+
+    closeBtn?.addEventListener("mouseleave", () => {
+        (closeBtn as HTMLElement).style.background = "transparent";
+        (closeBtn as HTMLElement).style.color = "#888";
+    });
+
+    // Close on overlay click
+    overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+
+    // Load history
+    try {
+        const { projectHistoryService } = await import("chili-core");
+        let history = [];
+
+        console.log("=== HISTORY DEBUG ===");
+        console.log("Project data:", project);
+        console.log("Project sessionId:", project.sessionId);
+        console.log("Project userId:", project.userId);
+        console.log("Project projectName:", project.projectName);
+        console.log("=====================");
+
+        try {
+            console.log("Attempting to load history from Firestore...");
+            console.log("Path: users/" + project.userId + "/projects/" + project.sessionId + "/history");
+            history = await projectHistoryService.getHistory(project.sessionId, project.userId);
+            console.log("✓ History loaded successfully:", history.length, "entries");
+            if (history.length > 0) {
+                console.log("First history entry:", history[0]);
+            }
+        } catch (historyError: any) {
+            // If the error is about missing collection/permissions, treat as empty history
+            console.error("✗ Failed to load history:", historyError);
+            console.error("Error code:", historyError.code);
+            console.error("Error message:", historyError.message);
+            history = [];
+        }
+
+        const contentDiv = dialog.querySelector("#history-content");
+        if (!contentDiv) return;
+
+        if (history.length === 0) {
+            contentDiv.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px;">
+                    <svg width="64" height="64" fill="none" stroke="#888" viewBox="0 0 24 24" style="margin: 0 auto 20px; opacity: 0.5;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 style="color: #888; font-size: 1.125rem; margin: 0 0 12px 0; font-weight: 500;">No edit history yet</h3>
+                    <p style="color: #666; font-size: 0.875rem; line-height: 1.6; max-width: 400px; margin: 0 auto;">
+                        History will appear when you or collaborators save changes to this project. Each save creates a snapshot showing who made the change, when, and what was modified.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        // Render history timeline
+        contentDiv.innerHTML = `
+            <div style="position: relative;">
+                <div style="position: absolute; left: 20px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.1));"></div>
+                <div id="history-timeline"></div>
+            </div>
+        `;
+
+        const timeline = contentDiv.querySelector("#history-timeline");
+        if (!timeline) return;
+
+        const actionIcons: Record<string, string> = {
+            created: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />`,
+            modified: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />`,
+            renamed: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />`,
+            shared: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />`,
+            deleted: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />`,
+        };
+
+        const actionColors: Record<string, string> = {
+            created: "#4ade80",
+            modified: "#3b82f6",
+            renamed: "#f59e0b",
+            shared: "#8b5cf6",
+            deleted: "#ef4444",
+        };
+
+        for (const change of history) {
+            const actionColor = actionColors[change.action] || "#888";
+            const actionIcon = actionIcons[change.action] || actionIcons.modified;
+            const timestamp = new Date(change.timestamp);
+            const timeAgo = formatTimeAgo(timestamp);
+            const fullDate = timestamp.toLocaleString();
+
+            const changeItem = document.createElement("div");
+            changeItem.style.cssText = `
+                position: relative;
+                padding-left: 56px;
+                padding-bottom: 32px;
+            `;
+
+            const hasFileUrl = change.fileUrl && change.fileUrl.trim() !== "";
+
+            changeItem.innerHTML = `
+                <div style="position: absolute; left: 8px; top: 0; width: 24px; height: 24px; background: ${actionColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(20, 20, 20, 0.98), 0 0 0 6px ${actionColor}33;">
+                    <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24">
+                        ${actionIcon}
+                    </svg>
+                </div>
+                
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px; transition: all 0.2s;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                                    ${change.userName.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div style="color: white; font-size: 14px; font-weight: 600;">${escapeHtml(change.userName)}</div>
+                                    <div style="color: #888; font-size: 12px;">${escapeHtml(change.userEmail)}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: ${actionColor}; font-size: 11px; font-weight: 600; text-transform: uppercase; background: ${actionColor}22; padding: 4px 10px; border-radius: 6px; margin-bottom: 6px;">${change.action}</div>
+                            <div style="color: #666; font-size: 11px;" title="${fullDate}">${timeAgo}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="color: #ccc; font-size: 13px; line-height: 1.5; margin-bottom: ${hasFileUrl ? "12px" : "0"};">
+                        ${escapeHtml(change.description)}
+                    </div>
+                    
+                    ${
+                        hasFileUrl
+                            ? `
+                        <button class="download-version-btn" data-file-url="${escapeHtml(change.fileUrl || "")}" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Download this version
+                        </button>
+                    `
+                            : ""
+                    }
+                </div>
+            `;
+
+            timeline.appendChild(changeItem);
+
+            // Download button handler
+            if (hasFileUrl) {
+                const downloadBtn = changeItem.querySelector(".download-version-btn");
+                downloadBtn?.addEventListener("click", () => {
+                    const fileUrl = downloadBtn.getAttribute("data-file-url");
+                    if (fileUrl) {
+                        window.open(fileUrl, "_blank");
+                    }
+                });
+
+                downloadBtn?.addEventListener("mouseenter", () => {
+                    (downloadBtn as HTMLElement).style.background = "rgba(59, 130, 246, 0.25)";
+                    (downloadBtn as HTMLElement).style.borderColor = "rgba(59, 130, 246, 0.5)";
+                    (downloadBtn as HTMLElement).style.transform = "translateY(-2px)";
+                });
+
+                downloadBtn?.addEventListener("mouseleave", () => {
+                    (downloadBtn as HTMLElement).style.background = "rgba(59, 130, 246, 0.15)";
+                    (downloadBtn as HTMLElement).style.borderColor = "rgba(59, 130, 246, 0.3)";
+                    (downloadBtn as HTMLElement).style.transform = "translateY(0)";
+                });
+            }
+        }
+    } catch (error) {
+        console.error("Failed to load history:", error);
+        const contentDiv = dialog.querySelector("#history-content");
+        if (contentDiv) {
+            contentDiv.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px;">
+                    <svg width="64" height="64" fill="none" stroke="#ef4444" viewBox="0 0 24 24" style="margin: 0 auto 20px; opacity: 0.5;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 style="color: #ef4444; font-size: 1.125rem; margin: 0 0 12px 0; font-weight: 500;">Failed to load history</h3>
+                    <p style="color: #888; font-size: 0.875rem;">Please try again later.</p>
+                </div>
+            `;
+        }
+    }
+}
+
 async function createNewProject(router: IRouter): Promise<void> {
     try {
         const projectName = prompt("Enter project name:", `Project-${Date.now()}`);
@@ -1208,6 +1458,52 @@ async function createNewProject(router: IRouter): Promise<void> {
 
 // ─── Overview Tab ───────────────────────────────────────────────────────
 
+async function calculateStorageUsage(projects: any[]): Promise<void> {
+    const storageValueEl = document.getElementById("storage-used-value");
+    const storageTrendEl = document.getElementById("storage-used-trend");
+
+    if (!storageValueEl || !storageTrendEl) return;
+
+    try {
+        let totalBytes = 0;
+        let filesProcessed = 0;
+
+        // Fetch file sizes from Cloudinary URLs
+        for (const project of projects) {
+            if (project.fileUrl) {
+                try {
+                    const response = await fetch(project.fileUrl, { method: "HEAD" });
+                    const contentLength = response.headers.get("content-length");
+                    if (contentLength) {
+                        totalBytes += parseInt(contentLength, 10);
+                        filesProcessed++;
+                    }
+                } catch (error) {
+                    console.warn(`Failed to fetch size for project ${project.projectName}:`, error);
+                }
+            }
+        }
+
+        // Format bytes to human-readable format
+        const formatBytes = (bytes: number): string => {
+            if (bytes === 0) return "0 B";
+            const k = 1024;
+            const sizes = ["B", "KB", "MB", "GB"];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${(bytes / k ** i).toFixed(2)} ${sizes[i]}`;
+        };
+
+        storageValueEl.textContent = formatBytes(totalBytes);
+        storageTrendEl.textContent = `${filesProcessed} of ${projects.length} projects`;
+        storageTrendEl.className = "stat-trend neutral";
+    } catch (error) {
+        console.error("Failed to calculate storage:", error);
+        storageValueEl.textContent = "Error";
+        storageTrendEl.textContent = "Unable to calculate";
+        storageTrendEl.className = "stat-trend neutral";
+    }
+}
+
 async function loadOverview(router: IRouter): Promise<void> {
     try {
         const projects = await projectService.getProjects();
@@ -1220,6 +1516,9 @@ async function loadOverview(router: IRouter): Promise<void> {
         const teamsCount = document.getElementById("teams-count");
         if (totalCount) totalCount.textContent = String(projects.length + sharedProjects.length);
         if (teamsCount) teamsCount.textContent = String(teams.length);
+
+        // Calculate storage usage
+        calculateStorageUsage(projects);
 
         // Load recent projects (last 6)
         const recentProjects = projects.slice(0, 6);
@@ -1398,20 +1697,19 @@ function createProjectCard(project: any, router: IRouter, showDelete: boolean): 
                 <span class="tag-modern">${project.fileUrl ? "Saved" : "New"}</span>
             </div>
         </div>
-        <div class="project-actions" style="position:absolute;top:8px;right:8px;display:flex;gap:4px;">
-            <button class="project-star-btn" data-starred="${isStarred}" title="${isStarred ? "Unstar project" : "Star project"}" style="background:${isStarred ? "rgba(255,215,0,0.3)" : "rgba(255,215,0,0.15)"};border:none;color:#ffd700;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-                <svg width="16" height="16" fill="${isStarred ? "currentColor" : "none"}" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-            </button>
-            <button class="project-open-btn" title="Open project" style="background:rgba(59,130,246,0.15);border:none;color:#3b82f6;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        <div class="project-actions" style="position:absolute;top:12px;right:12px;display:flex;gap:6px;">
+            <button class="project-star-btn" data-starred="${isStarred}" title="${isStarred ? "Unstar project" : "Star project"}" style="background:${isStarred ? "linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,180,0,0.25))" : "rgba(255,255,255,0.08)"};border:1px solid ${isStarred ? "rgba(255,215,0,0.4)" : "rgba(255,255,255,0.12)"};color:${isStarred ? "#ffd700" : "#888"};border-radius:8px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;backdrop-filter:blur(10px);">
+                <svg width="18" height="18" fill="${isStarred ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
             </button>
             ${
                 showDelete
-                    ? `<button class="project-delete-btn" title="Delete project" style="background:rgba(255,60,60,0.15);border:none;color:#ff4444;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">✕</button>`
+                    ? `<button class="project-delete-btn" title="Delete project" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#ff6b6b;border-radius:8px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;backdrop-filter:blur(10px);">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>`
                     : ""
             }
         </div>
@@ -1436,20 +1734,15 @@ function createProjectCard(project: any, router: IRouter, showDelete: boolean): 
             if (svg) {
                 if (newStarred) {
                     svg.setAttribute("fill", "currentColor");
-                    starBtn.setAttribute(
-                        "style",
-                        starBtn
-                            .getAttribute("style")
-                            ?.replace("rgba(255,215,0,0.15)", "rgba(255,215,0,0.3)") || "",
-                    );
+                    (starBtn as HTMLElement).style.background =
+                        "linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,180,0,0.25))";
+                    (starBtn as HTMLElement).style.borderColor = "rgba(255,215,0,0.4)";
+                    (starBtn as HTMLElement).style.color = "#ffd700";
                 } else {
                     svg.setAttribute("fill", "none");
-                    starBtn.setAttribute(
-                        "style",
-                        starBtn
-                            .getAttribute("style")
-                            ?.replace("rgba(255,215,0,0.3)", "rgba(255,215,0,0.15)") || "",
-                    );
+                    (starBtn as HTMLElement).style.background = "rgba(255,255,255,0.08)";
+                    (starBtn as HTMLElement).style.borderColor = "rgba(255,255,255,0.12)";
+                    (starBtn as HTMLElement).style.color = "#888";
                 }
             }
 
@@ -1469,21 +1762,9 @@ function createProjectCard(project: any, router: IRouter, showDelete: boolean): 
 
     // History button
     const historyBtn = card.querySelector(".project-history-btn");
-    historyBtn?.addEventListener("click", (e) => {
+    historyBtn?.addEventListener("click", async (e) => {
         e.stopPropagation();
-        alert(
-            `Edit History for "${project.projectName}"\n\nLast edited by you ${formatTimeAgo(project.lastModified)}\n\n(Full history feature coming soon)`,
-        );
-    });
-
-    // Open button
-    const openBtn = card.querySelector(".project-open-btn");
-    openBtn?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        localStorage.setItem("currentSessionId", project.sessionId);
-        localStorage.setItem("currentProjectName", project.projectName);
-        localStorage.setItem("currentProjectOwnerId", project.userId);
-        router.navigate(`/editor?sessionId=${project.sessionId}`);
+        showProjectHistoryDialog(project, router);
     });
 
     // Delete button
