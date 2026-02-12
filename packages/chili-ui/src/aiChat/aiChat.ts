@@ -1,4 +1,4 @@
-// Part of the Chili3d Project, under the AGPL-3.0 License.
+﻿// Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
 import { button, div, span } from "chili-controls";
@@ -103,7 +103,7 @@ export class AIChatPanel extends HTMLElement {
     }
 
     private connectWebSocket() {
-        const wsUrl = `wss://proletarianly-sociopsychological-myla.ngrok-free.dev/ws/chat/${this.sessionId}`;
+        const wsUrl = `wss://venus-215301763138.europe-west1.run.app/ws/chat/${this.sessionId}`;
         Logger.info("Connecting to WebSocket:", wsUrl);
 
         try {
