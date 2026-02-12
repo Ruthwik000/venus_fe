@@ -7,9 +7,10 @@
 
 Venus is a next-generation browser-based 3D CAD platform that revolutionizes collaborative design. Built on TypeScript and WebAssembly, Venus combines the power of OpenCascade with modern web technologies to deliver professional-grade CAD tools, real-time collaboration, AI-powered assistance, and cloud-based project management—all accessible through your browser.
 
+LIVE Link: https://venuscad.pages.dev/
 ### Key Features
 
-- **🤖 AI CAD Copilot**: Agentic AI assistant for intelligent design suggestions and automation
+- **🤖 AI CAD Copilot**: AI Copilot for CAD desing based on user prompt or sketch
 - **👥 Real-time Collaboration**: Work simultaneously with team members on 3D models
 - **☁️ Cloud Storage**: Automatic project sync via Cloudinary with version control
 - **📊 GitHub-Style History**: Track every change with detailed commit-style version history
