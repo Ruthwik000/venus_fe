@@ -28,7 +28,11 @@ export class AIChatToggle extends HTMLElement {
             this.chatPanel.remove();
             this.chatPanel = undefined;
         } else {
-            this.chatPanel = new AIChatPanel(this.app);
+            // Pass session ID from URL params so WebSocket uses the correct project session
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get("sessionId") || urlParams.get("session") || undefined;
+            this.chatPanel = new AIChatPanel(this.app, sessionId);
+            this.chatPanel.ensureConnection();
             document.body.appendChild(this.chatPanel);
         }
     }

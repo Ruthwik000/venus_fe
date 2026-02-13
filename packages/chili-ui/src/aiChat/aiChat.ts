@@ -51,7 +51,10 @@ export class AIChatPanel extends HTMLElement {
     private modelTypeSelect: HTMLSelectElement;
     private modelType: string = "openai";
 
-    constructor(private readonly app: IApplication) {
+    constructor(
+        private readonly app: IApplication,
+        sessionId?: string,
+    ) {
         super();
         this.className = style.chatContainer;
 
@@ -60,9 +63,9 @@ export class AIChatPanel extends HTMLElement {
         this.inputField.className = style.inputField;
         this.inputField.placeholder = "Ask Copilot...";
 
-        // Use project session ID if available, otherwise generate a new one
-        const projectSessionId = localStorage.getItem("currentSessionId");
-        this.sessionId = projectSessionId || this.generateUUID();
+        // Resolve session ID: constructor param > URL > localStorage > generate
+        this.sessionId = sessionId || this.resolveSessionId();
+        Logger.info(`AIChatPanel initialized with session ID: ${this.sessionId}`);
         // Use authenticated user's UID
         const currentUser = authService.getCurrentUser();
         this.uid = currentUser?.uid ?? "anonymous";
@@ -91,6 +94,64 @@ export class AIChatPanel extends HTMLElement {
 
         this.render();
         this.setupInputHandlers();
+        // Don't connect WebSocket here — the session ID may not be available yet
+        // (Editor is created during app build, before the router navigates to /editor?sessionId=xxx).
+        // Connection will be established when the chat panel is shown via ensureConnection().
+    }
+
+    /**
+     * Resolve the best available session ID from URL params and localStorage.
+     */
+    private resolveSessionId(): string {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlSessionId = urlParams.get("sessionId") || urlParams.get("session");
+        const storageSessionId = localStorage.getItem("currentSessionId");
+        const resolved = urlSessionId || storageSessionId || this.generateUUID();
+        Logger.info(
+            `AIChatPanel resolveSessionId: ${resolved} (source: ${urlSessionId ? "URL" : storageSessionId ? "localStorage" : "generated"})`,
+        );
+        return resolved;
+    }
+
+    /**
+     * Ensure the WebSocket is connected with the correct project session ID.
+     * Call this when the chat panel becomes visible.
+     */
+    ensureConnection() {
+        // Always re-resolve the session ID from current URL/localStorage
+        const currentSessionId = this.resolveSessionId();
+
+        if (currentSessionId !== this.sessionId) {
+            Logger.info(`AIChatPanel: session ID changed from ${this.sessionId} to ${currentSessionId}`);
+            this.sessionId = currentSessionId;
+            // Close stale connection so we reconnect with the correct ID
+            if (this.ws) {
+                this.ws.onclose = null; // Prevent auto-reconnect with old ID
+                this.ws.close();
+                this.ws = null;
+                this.wsConnected = false;
+            }
+        }
+
+        if (!this.ws || this.ws.readyState === WebSocket.CLOSED || this.ws.readyState === WebSocket.CLOSING) {
+            this.connectWebSocket();
+        }
+    }
+
+    /**
+     * Update the session ID and reconnect the WebSocket.
+     * Use this when the project session ID becomes available after initial construction.
+     */
+    updateSessionId(newSessionId: string) {
+        if (this.sessionId === newSessionId) return;
+        Logger.info(`AIChatPanel: updating session ID from ${this.sessionId} to ${newSessionId}`);
+        this.sessionId = newSessionId;
+        // Close existing connection and reconnect with new session ID
+        if (this.ws) {
+            this.ws.onclose = null; // Prevent auto-reconnect with old ID
+            this.ws.close();
+            this.ws = null;
+        }
         this.connectWebSocket();
     }
 
@@ -494,7 +555,12 @@ export class AIChatPanel extends HTMLElement {
 
     private handleSendMessage() {
         const prompt = this.inputField.value.trim();
-        if (!prompt || this.isProcessing || !this.wsConnected) return;
+        if (!prompt || this.isProcessing) return;
+
+        // Ensure we're connected with the correct session ID before sending
+        this.ensureConnection();
+
+        if (!this.wsConnected) return;
 
         this.isProcessing = true;
         this.sendButton.disabled = true;

@@ -80,7 +80,8 @@ export class Editor extends HTMLElement {
         );
 
         // Create AI chat panel but don't show it initially
-        this._aiChatPanel = new AIChatPanel(this.app);
+        // Pass the project session ID so WebSocket connects with the correct ID
+        this._aiChatPanel = new AIChatPanel(this.app, this._currentProjectId ?? undefined);
         this._aiChatPanel.style.display = "none";
 
         // Create comments panel if we have a project ID
@@ -239,6 +240,12 @@ export class Editor extends HTMLElement {
         this._isAIChatVisible = !this._isAIChatVisible;
         if (this._aiChatPanel) {
             this._aiChatPanel.style.display = this._isAIChatVisible ? "flex" : "none";
+            // When showing the panel, ensure WebSocket is connected with the correct session ID.
+            // The session ID may have changed since the panel was created (e.g., user navigated
+            // from dashboard to editor after the panel was constructed during app startup).
+            if (this._isAIChatVisible) {
+                this._aiChatPanel.ensureConnection();
+            }
         }
     };
 }
