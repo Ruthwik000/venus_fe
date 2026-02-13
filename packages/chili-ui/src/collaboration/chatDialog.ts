@@ -36,13 +36,19 @@ export class ChatDialog extends HTMLElement {
     private subscribeToMessages() {
         if (this.unsubscribe) return;
 
-        this.unsubscribe = chatService.subscribeToMessages((messages) => {
+        this.unsubscribe = chatService.subscribeToMessages(this.projectId, (messages) => {
             this.messages = messages;
             this.renderMessages();
         });
     }
 
     private render() {
+        this.chatInput = input({
+            type: "text",
+            placeholder: "Type a message...",
+            className: style.input,
+        });
+
         const dialog = div(
             { className: style.dialog },
             div(
@@ -57,11 +63,7 @@ export class ChatDialog extends HTMLElement {
             div({ id: "chat-messages-list", className: style.messagesList }),
             div(
                 { className: style.inputContainer },
-                (this.chatInput = input({
-                    type: "text",
-                    placeholder: "Type a message...",
-                    className: style.input,
-                })),
+                this.chatInput,
                 button({
                     className: style.sendButton,
                     textContent: "Send",
@@ -119,7 +121,7 @@ export class ChatDialog extends HTMLElement {
         if (!this.chatInput || !this.chatInput.value.trim()) return;
 
         try {
-            await chatService.sendMessage(this.chatInput.value.trim());
+            await chatService.sendMessage(this.chatInput.value.trim(), this.projectId);
             this.chatInput.value = "";
         } catch (error) {
             console.error("Failed to send message:", error);
