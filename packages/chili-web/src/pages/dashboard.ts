@@ -1372,10 +1372,10 @@ async function loadNotificationsDialog(): Promise<void> {
                         loadNotificationsDialog();
                         updateNotificationBadge();
 
-                        alert("Access request approved!");
+                        await showCustomAlert("Access request approved!", "success");
                     } catch (error) {
                         console.error("Failed to approve access request:", error);
-                        alert("Failed to approve access request");
+                        await showCustomAlert("Failed to approve access request", "error");
                     }
                 });
             });
@@ -1390,7 +1390,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         updateNotificationBadge();
                     } catch (error) {
                         console.error("Failed to reject access request:", error);
-                        alert("Failed to reject access request");
+                        await showCustomAlert("Failed to reject access request", "error");
                     }
                 });
             });
@@ -1405,7 +1405,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         loadNotificationsDialog();
                         updateNotificationBadge();
 
-                        alert("Friend request accepted!");
+                        await showCustomAlert("Friend request accepted!", "success");
                     } catch (error) {
                         console.error("Failed to accept friend request:", error);
                         alert("Failed to accept friend request");
@@ -1460,10 +1460,10 @@ async function loadNotificationsDialog(): Promise<void> {
                         loadNotificationsDialog();
                         updateNotificationBadge();
 
-                        alert("Team invitation accepted!");
+                        await showCustomAlert("Team invitation accepted!", "success");
                     } catch (error) {
                         console.error("Failed to accept team invitation:", error);
-                        alert("Failed to accept team invitation");
+                        await showCustomAlert("Failed to accept team invitation", "error");
                     }
                 });
             });
@@ -1485,7 +1485,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         updateNotificationBadge();
                     } catch (error) {
                         console.error("Failed to reject team invitation:", error);
-                        alert("Failed to reject team invitation");
+                        await showCustomAlert("Failed to reject team invitation", "error");
                     }
                 });
             });
@@ -1501,12 +1501,13 @@ async function loadNotificationsDialog(): Promise<void> {
                         loadNotificationsDialog();
                         updateNotificationBadge();
 
-                        alert(
+                        await showCustomAlert(
                             "Project invitation accepted! The project is now in your Collaborative Projects.",
+                            "success",
                         );
                     } catch (error) {
                         console.error("Failed to accept project invitation:", error);
-                        alert("Failed to accept project invitation");
+                        await showCustomAlert("Failed to accept project invitation", "error");
                     }
                 });
             });
@@ -1522,7 +1523,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         updateNotificationBadge();
                     } catch (error) {
                         console.error("Failed to reject project invitation:", error);
-                        alert("Failed to reject project invitation");
+                        await showCustomAlert("Failed to reject project invitation", "error");
                     }
                 });
             });
@@ -1534,9 +1535,22 @@ async function loadNotificationsDialog(): Promise<void> {
 
 // ─── Helper Functions ───────────────────────────────────────────────────
 
-function formatTimeAgo(date: Date): string {
+function formatTimeAgo(date: Date | any): string {
+    // Handle Firestore Timestamp objects
+    let dateObj: Date;
+    if (date && typeof date.toDate === "function") {
+        dateObj = date.toDate();
+    } else if (date instanceof Date) {
+        dateObj = date;
+    } else if (date && typeof date.getTime === "function") {
+        dateObj = date;
+    } else {
+        // Fallback for invalid dates
+        return "Recently";
+    }
+
     const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const diffMs = now.getTime() - dateObj.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
@@ -1546,7 +1560,7 @@ function formatTimeAgo(date: Date): string {
     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString();
+    return dateObj.toLocaleDateString();
 }
 
 function escapeHtml(str: string): string {
@@ -2224,13 +2238,15 @@ function createProjectCard(project: any, router: IRouter, showDelete: boolean): 
         const deleteBtn = card.querySelector(".project-delete-btn");
         deleteBtn?.addEventListener("click", async (e) => {
             e.stopPropagation();
-            if (!confirm(`Delete project "${project.projectName}"?`)) return;
+            const confirmed = await showCustomConfirm(`Delete project "${project.projectName}"?`);
+            if (!confirmed) return;
             try {
                 await projectService.deleteProject(project.sessionId);
                 card.remove();
+                await showCustomAlert("Project deleted successfully", "success");
             } catch (err) {
                 console.error("Failed to delete project:", err);
-                alert("Failed to delete project.");
+                await showCustomAlert("Failed to delete project", "error");
             }
         });
     }
