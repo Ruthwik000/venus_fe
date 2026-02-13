@@ -37,7 +37,7 @@ export class Editor extends HTMLElement {
     private _sidebarEl: HTMLDivElement | null = null;
     private _isSidebarVisible: boolean = true;
     private _aiChatPanel: AIChatPanel | null = null;
-    private _isAIChatVisible: boolean = false;
+    private _isAIChatVisible: boolean = true;
     private _commentsPanel: CommentsPanel | null = null;
     private _presenceIndicators: PresenceIndicators | null = null;
     private _currentProjectId: string | null = null;
@@ -86,10 +86,10 @@ export class Editor extends HTMLElement {
             }),
         );
 
-        // Create AI chat panel but don't show it initially
+        // Create AI chat panel and show it by default
         // Pass the project session ID so WebSocket connects with the correct ID
         this._aiChatPanel = new AIChatPanel(this.app, this._currentProjectId ?? undefined);
-        this._aiChatPanel.style.display = "none";
+        this._aiChatPanel.style.display = "flex";
 
         // Create comments panel if we have a project ID
         if (this._currentProjectId) {
