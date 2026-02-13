@@ -2238,13 +2238,15 @@ function createProjectCard(project: any, router: IRouter, showDelete: boolean): 
         const deleteBtn = card.querySelector(".project-delete-btn");
         deleteBtn?.addEventListener("click", async (e) => {
             e.stopPropagation();
-            if (!confirm(`Delete project "${project.projectName}"?`)) return;
+            const confirmed = await showCustomConfirm(`Delete project "${project.projectName}"?`);
+            if (!confirmed) return;
             try {
                 await projectService.deleteProject(project.sessionId);
                 card.remove();
+                await showCustomAlert("Project deleted successfully", "success");
             } catch (err) {
                 console.error("Failed to delete project:", err);
-                alert("Failed to delete project.");
+                await showCustomAlert("Failed to delete project", "error");
             }
         });
     }
