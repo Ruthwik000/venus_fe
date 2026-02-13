@@ -439,6 +439,7 @@ export const shareService = {
         await addDoc(collection(db, "projectShares"), {
             projectId: invitation.projectId,
             sharedBy: invitation.ownerId,
+            ownerEmail: invitation.ownerEmail, // Store owner email for display
             sharedWith: user.email,
             permission: invitation.permission,
             status: "accepted",
@@ -530,6 +531,28 @@ export const shareService = {
                 collaborator.userId,
             );
         }
+    },
+
+    async leaveProject(projectId: string, ownerId: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        // Remove from projectShares
+        const sharesRef = collection(db, "projectShares");
+        const q = query(
+            sharesRef,
+            where("projectId", "==", projectId),
+            where("sharedWith", "==", user.email),
+        );
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+            await deleteDoc(snapshot.docs[0].ref);
+        }
+
+        // Remove from collaborators
+        const { projectCollaboratorService } = await import("./firebase");
+        await projectCollaboratorService.removeCollaborator(projectId, ownerId, user.uid);
     },
 };
 
@@ -848,7 +871,7 @@ export const projectSyncService = {
 // ─── Chat Service ───────────────────────────────────────────────────────────
 
 export const chatService = {
-    async sendMessage(message: string): Promise<void> {
+    async sendMessage(message: string, projectId: string): Promise<void> {
         const user = auth.currentUser;
         if (!user) throw new Error("User not authenticated");
 
@@ -861,11 +884,13 @@ export const chatService = {
             read: false,
         };
 
-        await addDoc(collection(db, "chatMessages"), chatMessage);
+        // Store messages in project-specific subcollection
+        await addDoc(collection(db, "projectChats", projectId, "messages"), chatMessage);
     },
 
-    subscribeToMessages(callback: (messages: ChatMessage[]) => void): Unsubscribe {
-        const messagesRef = collection(db, "chatMessages");
+    subscribeToMessages(projectId: string, callback: (messages: ChatMessage[]) => void): Unsubscribe {
+        // Subscribe to project-specific messages
+        const messagesRef = collection(db, "projectChats", projectId, "messages");
         const q = query(messagesRef, orderBy("timestamp", "desc"));
 
         return onSnapshot(q, (snapshot) => {
@@ -881,16 +906,16 @@ export const chatService = {
         });
     },
 
-    async markAsRead(messageId: string): Promise<void> {
-        const messageRef = doc(db, "chatMessages", messageId);
+    async markAsRead(projectId: string, messageId: string): Promise<void> {
+        const messageRef = doc(db, "projectChats", projectId, "messages", messageId);
         await updateDoc(messageRef, { read: true });
     },
 
-    async getUnreadCount(): Promise<number> {
+    async getUnreadCount(projectId: string): Promise<number> {
         const user = auth.currentUser;
         if (!user) return 0;
 
-        const messagesRef = collection(db, "chatMessages");
+        const messagesRef = collection(db, "projectChats", projectId, "messages");
         const q = query(messagesRef, where("read", "==", false), where("userId", "!=", user.uid));
         const snapshot = await getDocs(q);
 
