@@ -11,16 +11,31 @@ export class Permanent {
         dialog.appendChild(
             div(
                 { className: style.container },
-                div({
-                    className: style.loading,
-                    style: {
-                        animation: `${style.circle} infinite 0.75s linear`,
-                    },
-                }),
+                div(
+                    { className: style.spinnerContainer },
+                    div({
+                        className: style.outerRing,
+                    }),
+                    div({
+                        className: style.middleRing,
+                    }),
+                    div({
+                        className: style.innerRing,
+                    }),
+                    div({
+                        className: style.centerDot,
+                    }),
+                ),
                 span({
                     className: style.message,
                     textContent: I18n.translate(message, ...args),
                 }),
+                div(
+                    { className: style.dotsContainer },
+                    div({ className: style.dot }),
+                    div({ className: style.dot }),
+                    div({ className: style.dot }),
+                ),
             ),
         );
         document.body.appendChild(dialog);
