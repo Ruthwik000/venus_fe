@@ -1920,6 +1920,15 @@ body {
     }
 }
 
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .modern-sidebar {

@@ -62,6 +62,13 @@ export class Editor extends HTMLElement {
         const urlParams = new URLSearchParams(window.location.search);
         this._currentProjectId = urlParams.get("session") || urlParams.get("sessionId");
 
+        // Also check localStorage as fallback
+        if (!this._currentProjectId) {
+            this._currentProjectId = localStorage.getItem("currentSessionId");
+        }
+
+        console.log("Editor initialized with project ID:", this._currentProjectId);
+
         this.render();
     }
 
@@ -165,7 +172,7 @@ export class Editor extends HTMLElement {
 
     private readonly _openShareDialog = async () => {
         if (!this._currentProjectId) {
-            alert("No project loaded");
+            this.showCustomAlert("No project loaded. Please create or open a project first.");
             return;
         }
 
@@ -194,7 +201,7 @@ export class Editor extends HTMLElement {
 
     private readonly _openChatDialog = async () => {
         if (!this._currentProjectId) {
-            alert("No project loaded");
+            this.showCustomAlert("No project loaded. Please create or open a project first.");
             return;
         }
 
@@ -202,6 +209,88 @@ export class Editor extends HTMLElement {
         dialog.show();
         document.body.appendChild(dialog);
     };
+
+    private showCustomAlert(message: string): void {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease;
+        `;
+
+        const dialog = document.createElement("div");
+        dialog.style.cssText = `
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.98), rgba(20, 20, 20, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            min-width: 400px;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        `;
+
+        dialog.innerHTML = `
+            <div style="
+                width: 64px;
+                height: 64px;
+                margin: 0 auto 20px;
+                background: rgba(239, 68, 68, 0.1);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <svg width="32" height="32" fill="none" stroke="#ef4444" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <p style="color: #fff; font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">${message}</p>
+            <button id="custom-alert-ok" style="
+                padding: 10px 32px;
+                background: linear-gradient(135deg, #10B981, #059669);
+                border: none;
+                border-radius: 8px;
+                color: #fff;
+                font-size: 0.9375rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            ">OK</button>
+        `;
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        const okBtn = document.getElementById("custom-alert-ok");
+        okBtn?.addEventListener("mouseenter", () => {
+            okBtn.style.transform = "translateY(-1px)";
+            okBtn.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.4)";
+        });
+        okBtn?.addEventListener("mouseleave", () => {
+            okBtn.style.transform = "";
+            okBtn.style.boxShadow = "";
+        });
+
+        const cleanup = () => {
+            overlay.style.animation = "fadeOut 0.2s ease";
+            setTimeout(() => overlay.remove(), 200);
+        };
+
+        okBtn?.addEventListener("click", cleanup);
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) cleanup();
+        });
+    }
 
     private readonly showSelectionControl = (controller: AsyncController) => {
         this._selectionController.setControl(controller);
