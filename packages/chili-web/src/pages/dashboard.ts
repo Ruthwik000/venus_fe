@@ -1372,10 +1372,10 @@ async function loadNotificationsDialog(): Promise<void> {
                         loadNotificationsDialog();
                         updateNotificationBadge();
 
-                        alert("Access request approved!");
+                        await showCustomAlert("Access request approved!", "success");
                     } catch (error) {
                         console.error("Failed to approve access request:", error);
-                        alert("Failed to approve access request");
+                        await showCustomAlert("Failed to approve access request", "error");
                     }
                 });
             });
@@ -1390,7 +1390,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         updateNotificationBadge();
                     } catch (error) {
                         console.error("Failed to reject access request:", error);
-                        alert("Failed to reject access request");
+                        await showCustomAlert("Failed to reject access request", "error");
                     }
                 });
             });
@@ -1405,7 +1405,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         loadNotificationsDialog();
                         updateNotificationBadge();
 
-                        alert("Friend request accepted!");
+                        await showCustomAlert("Friend request accepted!", "success");
                     } catch (error) {
                         console.error("Failed to accept friend request:", error);
                         alert("Failed to accept friend request");
@@ -1460,10 +1460,10 @@ async function loadNotificationsDialog(): Promise<void> {
                         loadNotificationsDialog();
                         updateNotificationBadge();
 
-                        alert("Team invitation accepted!");
+                        await showCustomAlert("Team invitation accepted!", "success");
                     } catch (error) {
                         console.error("Failed to accept team invitation:", error);
-                        alert("Failed to accept team invitation");
+                        await showCustomAlert("Failed to accept team invitation", "error");
                     }
                 });
             });
@@ -1485,7 +1485,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         updateNotificationBadge();
                     } catch (error) {
                         console.error("Failed to reject team invitation:", error);
-                        alert("Failed to reject team invitation");
+                        await showCustomAlert("Failed to reject team invitation", "error");
                     }
                 });
             });
@@ -1501,12 +1501,13 @@ async function loadNotificationsDialog(): Promise<void> {
                         loadNotificationsDialog();
                         updateNotificationBadge();
 
-                        alert(
+                        await showCustomAlert(
                             "Project invitation accepted! The project is now in your Collaborative Projects.",
+                            "success",
                         );
                     } catch (error) {
                         console.error("Failed to accept project invitation:", error);
-                        alert("Failed to accept project invitation");
+                        await showCustomAlert("Failed to accept project invitation", "error");
                     }
                 });
             });
@@ -1522,7 +1523,7 @@ async function loadNotificationsDialog(): Promise<void> {
                         updateNotificationBadge();
                     } catch (error) {
                         console.error("Failed to reject project invitation:", error);
-                        alert("Failed to reject project invitation");
+                        await showCustomAlert("Failed to reject project invitation", "error");
                     }
                 });
             });
