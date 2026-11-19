@@ -1,29 +1,41 @@
-# Venus 
+# Venus CAD
 
-> A modern, collaborative 3D CAD platform built for the web
+Venus brings a GitHub-style project workflow to 3D CAD. A team can open a shared model in the browser, discuss a design change in the editor, and see who saved the next revision.
 
+We built Venus on [Chili3D](https://github.com/xiangechen/chili3d), which provides the CAD editor, modeling commands, OpenCascade geometry kernel, and Three.js viewport. Our work adds the project dashboard, team workspaces, sharing and save history, live collaboration, and an AI copilot that imports generated parts into the editor.
 
-## Overview
+[Website](https://venuscad.pages.dev/) · [Demo video](https://drive.google.com/file/d/1jjj3zXOGLyOmLG7YZgZWUv611T0uTkyC/view?usp=sharing) · [Backend repository](https://github.com/Ruthwik000/venus_be)
 
-Venus is a next-generation browser-based 3D CAD platform that revolutionizes collaborative design. Built on TypeScript and WebAssembly, Venus combines the power of OpenCascade with modern web technologies to deliver professional-grade CAD tools, real-time collaboration, AI-powered assistance, and cloud-based project management—all accessible through your browser.
+## Working on a shared model
 
-LIVE Link: https://venuscad.pages.dev/
-### Key Features
+- **Team creation.** Open **Teams** on the dashboard and choose **Create Team**. Name the team, then create its first project or select one you already own. Invite teammates by selecting friends or entering email addresses. From the team page, you can manage members and add more projects.
+- **Project sharing.** Invite a collaborator to view or edit a specific design, or review a request for access. The dashboard brings together projects you own, projects shared with you, and projects you have starred.
+- **Live collaboration.** Presence indicators show who has the project open. Teammates can leave comments on the design or discuss a change in project chat. When someone saves the model to the cloud, other open editors reload the saved snapshot.
+- **Project history.** A project's activity log records events such as creation and saves, along with the contributor, timestamp, and description. Teammates can follow the sequence of changes from the dashboard.
+- **AI copilot.** Ask for a part such as a mounting bracket, then answer questions about its dimensions and features. The backend generates a FreeCAD model and returns STEP and STL files. The editor imports the result into the current document. You can request a revision in the same chat and save the part with the rest of the project.
 
-- **🤖 AI CAD Copilot**: AI Copilot for CAD desing based on user prompt or sketch
-- **👥 Real-time Collaboration**: Work simultaneously with team members on 3D models
-- **☁️ Cloud Storage**: Automatic project sync via Cloudinary with version control
-- **📊 GitHub-Style History**: Track every change with detailed commit-style version history
-- **🏢 Team Management**: Create teams, manage members, and organize projects
-- **🎨 Complete CAD Toolset**: Professional modeling, editing, and analysis tools
-- **📁 Import/Export**: Support for industry-standard formats (STEP, IGES, BREP)
-- **🎭 Parametric Variations**: Create design variations with parametric modeling
-- **⚡ WebAssembly Performance**: Near-native speed using OpenCascade compiled to WASM
-- **🎨 Modern UI**: Clean, professional interface with glassmorphic design
+## Parametric design variations
+
+Native parametric shapes, including boxes and cylinders, retain their editable dimensions. For example, create a cylinder with a radius of 10 and a height of 20. Select it, open **Properties**, and change **Height** to 30. The editor rebuilds the cylinder at the new height and keeps its radius. You can export each size separately or save the editable document as a native `.cd` file.
+
+For a copilot-generated part, describe the variation in the same chat. For example, ask “Increase the mounting holes from 4 mm to 6 mm and keep their centers fixed.” The backend revises the saved FreeCAD script and the editor imports the resulting model.
+
+## Import and export
+
+Use **Import** to add one or more files to the active document. Use **Export** to choose the model or models to write. STEP is useful for exchanging solid geometry with another CAD system. STL produces a mesh for a 3D-printing slicer.
+
+| Format | Import | Export |
+| --- | --- | --- |
+| STEP | `.step`, `.stp` | `.step` |
+| IGES | `.iges`, `.igs` | `.iges` |
+| BREP | `.brep` | `.brep` |
+| STL | `.stl` | `.stl` (ASCII or binary) |
+| PLY | — | `.ply` (ASCII or binary) |
+| OBJ | — | `.obj` |
 
 ## Frontend architecture
 
-The TypeScript editor runs the OpenCascade geometry kernel in WebAssembly and renders the document with Three.js. Opening a project supplies the session ID used by both the editor and the CAD copilot.
+The browser runs the TypeScript editor and computes geometry locally with OpenCascade compiled to WebAssembly. The project session ID connects the open document to its Firestore project record and copilot conversation.
 
 ```mermaid
 flowchart TD
@@ -46,332 +58,43 @@ flowchart TD
     files -->|Fetch saved .cd snapshot| peer
 ```
 
-**Generating a part.** The copilot panel sends text and clarification answers to FastAPI. When generation finishes, the panel downloads the STEP file from Cloudinary, falling back to STL when needed, and imports it into the active document. Saving the project includes that geometry in its next `.cd` snapshot. [Copilot panel](packages/chili-ui/src/aiChat/aiChat.ts) · [Backend architecture](https://github.com/Ruthwik000/venus_be#backend-architecture)
+A project save and an AI generation produce different files. **Save** writes the editor document to IndexedDB. For a cloud project, it also uploads a native `.cd` snapshot to Cloudinary and updates Firestore with the snapshot URL and save time. Other editors use that URL to load the new document. [Save command](packages/chili/src/commands/application/saveDocument.ts) · [Project sync](packages/chili-web/src/pages/editor.ts)
 
-**Sharing an edit.** The Save command writes to IndexedDB and, for an active cloud project, uploads the serialized document and updates the owner's Firestore project record. Other open editors listen for that update and reload the saved snapshot. Presence, comments, and team chat use separate Firestore subscriptions. [Save command](packages/chili/src/commands/application/saveDocument.ts) · [Project sync](packages/chili-web/src/pages/editor.ts)
+The **copilot** sends prompts to FastAPI over a WebSocket. When the backend returns model URLs, the browser fetches the STEP file, or STL if only that format is available, and adds the geometry to the open document. The next project save includes the imported part. [Copilot panel](packages/chili-ui/src/aiChat/aiChat.ts) · [Backend architecture](https://github.com/Ruthwik000/venus_be#backend-architecture)
 
-## Technology Stack
+## Local development
 
-### Frontend
-- **TypeScript** - Type-safe development
-- **Three.js** - 3D rendering and visualization
-- **Rspack** - Fast build tooling
-- **Biome** - Unified linting and formatting
+Use Node.js 24 and npm from the repository root. The frontend includes the compiled WebAssembly module.
 
-### Backend & Services
-- **Firebase** - Authentication and Firestore database
-- **Cloudinary** - Cloud storage for 3D models
-- **WebAssembly** - OpenCascade OCCT for CAD operations
+```sh
+npm install
+```
 
-### Architecture
-- **Monorepo Structure** - 12 modular packages
-- **Package-based Organization** - Clean separation of concerns
-- **Modern Web Standards** - ES modules, Web Workers, WebGL
+Copy `.env.example` to `.env`. To run the copilot locally, start the Python service using the [backend setup guide](https://github.com/Ruthwik000/venus_be#run-locally) and set these frontend values before starting the dev server.
 
-## Getting Started
+```dotenv
+VITE_BACKEND_WS_URL=ws://localhost:8000
+VITE_BACKEND_HTTP_URL=http://localhost:8000
+```
 
-### Prerequisites
+Firebase Auth and Firestore use the project configured in the Firebase client. Point that client at your development Firebase project when using your own data. The current cloud-save implementation signs uploads in the browser, so a Cloudinary signing secret supplied to the frontend is visible in the bundle. Keep production signing credentials on the server. [Firebase client](packages/chili-core/src/firebase.ts) · [Cloudinary client](packages/chili-core/src/cloudinary.ts)
 
-- Node.js (v18 or higher)
-- npm or yarn
-- Git
-
-### Installation
-
-1. Clone the repository
-   ```bash
-   git clone https://github.com/Ruthwik000/venus_fe.git
-   cd venus_fe
-   ```
-
-2. Install dependencies
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables
-   ```bash
-   cp .env.example .env
-   # Edit .env with your Firebase and Cloudinary credentials
-   ```
-
-### Development
-
-Start the development server:
-
-```bash
+```sh
 npm run dev
 ```
 
-The application will be available at `http://localhost:8080`
+Open the [local frontend](http://localhost:8081). Run `npm test` for the frontend test suite, `npm run build` for a production build, and `npm run preview` to serve that build locally. For changes to the C++ geometry bindings, see the [WebAssembly build guide](cpp/README.md).
 
-### Building
+## Source guide
 
-Build for production:
+| Area | Location |
+| --- | --- |
+| Sign-in, dashboard, and project routes | [chili-web](packages/chili-web/src) |
+| Project records, sharing, teams, and live subscriptions | [Firebase services](packages/chili-core/src/firebase.ts) and [collaboration services](packages/chili-core/src/collaboration.ts) |
+| Copilot, comments, chat, and presence controls | [chili-ui](packages/chili-ui/src) |
+| Modeling commands and document editing | [chili](packages/chili/src) |
+| Geometry and rendering | [OpenCascade bindings](packages/chili-wasm) and [Three.js integration](packages/chili-three) |
 
-```bash
-npm run build
-```
+## Credits and license
 
-Preview the production build:
-
-```bash
-npm run preview
-```
-
-### Code Quality
-
-Run linting and auto-fix:
-
-```bash
-npm run check
-```
-
-Format all code:
-
-```bash
-npm run format
-```
-
-### Testing
-
-Run all tests:
-
-```bash
-npm run test
-```
-
-Run tests with coverage:
-
-```bash
-npm run testc
-```
-
-## Project Structure
-
-```
-venus_fe/
-├── packages/
-│   ├── chili-core/          # Core interfaces and utilities
-│   ├── chili-web/           # Web application entry point
-│   ├── chili-ui/            # UI components
-│   ├── chili-three/         # Three.js integration
-│   ├── chili-builder/       # Application builder
-│   ├── chili-controls/      # User controls
-│   ├── chili-storage/       # Data persistence
-│   ├── chili-i18n/          # Internationalization
-│   └── chili-wasm/          # WebAssembly bindings
-├── cpp/                     # C++ source for WASM
-├── public/                  # Static assets
-└── scripts/                 # Build and utility scripts
-```
-
-## Features
-
-### 🤖 AI CAD Copilot
-
-- **Intelligent Design Assistance**: AI-powered suggestions for optimal design patterns
-- **Automated Modeling**: Generate 3D models from natural language descriptions
-- **Design Optimization**: AI-driven recommendations for structural improvements
-- **Smart Constraints**: Automatic constraint detection and application
-- **Pattern Recognition**: Identify and replicate design patterns across models
-
-### 🛠️ Complete CAD Toolset
-
-#### Basic Shapes & Primitives
-- Box, Cylinder, Cone, Sphere, Pyramid, Prism
-- Torus, Wedge, and custom primitives
-- Parametric shape generation
-
-#### 2D Sketching Tools
-- Lines, Arcs, Circles, Ellipses
-- Rectangles, Polygons, Splines
-- Bezier curves and NURBS
-- Constraint-based sketching
-
-#### Advanced Modeling Operations
-- **Boolean Operations**: Union, Difference, Intersection, XOR
-- **Extrusion**: Linear and tapered extrusion with draft angles
-- **Revolution**: Revolve profiles around axes
-- **Sweeping**: Sweep profiles along paths
-- **Lofting**: Create surfaces between multiple profiles
-- **Offset**: Offset surfaces and curves
-- **Thickening**: Add thickness to surfaces
-- **Shelling**: Hollow out solid bodies
-
-#### Editing & Modification Tools
-- **Chamfer & Fillet**: Edge blending with variable radius
-- **Trim & Extend**: Modify curve and surface boundaries
-- **Split & Break**: Divide objects at specified locations
-- **Mirror**: Create symmetric copies
-- **Pattern**: Linear, circular, and custom patterns
-- **Scale & Transform**: Precise transformations with constraints
-- **Feature Removal**: Remove holes, fillets, and other features
-
-#### Analysis & Measurement
-- **Distance Measurement**: Point-to-point, point-to-edge, edge-to-edge
-- **Angle Measurement**: Between edges, faces, and planes
-- **Area Calculation**: Surface area of faces and bodies
-- **Volume Calculation**: Mass properties and volume analysis
-- **Center of Mass**: Calculate geometric and mass centers
-- **Bounding Box**: Get dimensional extents
-- **Curvature Analysis**: Analyze surface curvature
-
-### 👥 Real-time Collaboration
-
-- **Live Presence Indicators**: See who's viewing or editing in real-time
-- **Cursor Tracking**: Watch collaborators' actions as they happen
-- **Comments & Annotations**: Add contextual comments to specific features
-- **Team Chat**: Built-in messaging for project discussions
-- **Activity Feed**: Track all project changes and collaborator actions
-- **Conflict Resolution**: Automatic handling of concurrent edits
-- **Permission Management**: View, comment, or edit access levels
-
-### 🏢 Team Management
-
-- **Create Teams**: Organize users into collaborative workspaces
-- **Role-Based Access**: Owner, Admin, Member, and Viewer roles
-- **Project Organization**: Group projects by team
-- **Member Invitations**: Invite via email with automatic notifications
-- **Team Dashboard**: Overview of team projects and activity
-- **Resource Sharing**: Share libraries and templates across teams
-- **Team Analytics**: Track team productivity and project metrics
-
-### 📊 Project Management
-
-- **Dashboard Overview**: Visual summary of all projects and teams
-- **Version History**: GitHub-style commit history for every save
-  - Track who made changes and when
-  - View detailed change descriptions
-  - Download any previous version
-  - Compare versions side-by-side
-- **Storage Analytics**: Monitor storage usage across all projects
-- **Project Starring**: Quick access to favorite projects
-- **Search & Filter**: Find projects by name, date, or collaborators
-- **Project Templates**: Create and reuse project templates
-- **Bulk Operations**: Manage multiple projects simultaneously
-
-### 🎭 Parametric Modeling
-
-- **Parametric Constraints**: Define relationships between features
-- **Design Variables**: Create adjustable parameters
-- **Equations & Formulas**: Drive dimensions with mathematical expressions
-- **Design Tables**: Generate variations from parameter sets
-- **Configuration Management**: Save and switch between design variants
-- **Update Propagation**: Automatic model updates when parameters change
-- **History-Based Modeling**: Edit feature history to modify designs
-
-### 📁 Import & Export
-
-#### Supported Import Formats
-- **STEP** (.step, .stp) - Industry standard for CAD data exchange
-- **IGES** (.iges, .igs) - Legacy CAD format support
-- **BREP** (.brep) - OpenCascade native format
-- **STL** (.stl) - For 3D printing and mesh operations
-- **OBJ** (.obj) - Mesh geometry with materials
-
-#### Supported Export Formats
-- **STEP** (.step, .stp) - For CAD software interoperability
-- **IGES** (.iges, .igs) - Legacy system compatibility
-- **BREP** (.brep) - Native format with full fidelity
-- **STL** (.stl) - For 3D printing and manufacturing
-- **OBJ** (.obj) - For rendering and visualization
-- **JSON** (.json) - Venus native format with metadata
-
-#### Import/Export Features
-- **Batch Processing**: Import/export multiple files
-- **Format Conversion**: Convert between supported formats
-- **Validation**: Automatic geometry validation on import
-- **Repair Tools**: Fix common geometry issues
-- **Metadata Preservation**: Maintain design intent and annotations
-- **Assembly Support**: Import/export multi-part assemblies
-
-### 🎨 User Interface
-
-- **Modern Landing Page**: Animated WebGL shader background
-- **Responsive Design**: Optimized for desktop and tablet
-- **Dark Theme**: Professional UI optimized for extended use
-- **Customizable Workspace**: Arrange panels and toolbars
-- **Keyboard Shortcuts**: Efficient workflow with hotkeys
-- **Context Menus**: Right-click access to relevant tools
-- **Command Palette**: Quick access to all functions
-- **Undo/Redo**: Unlimited history with transaction tracking
-- **Multi-viewport**: Work with multiple views simultaneously
-
-### ☁️ Cloud Features
-
-- **Automatic Sync**: Changes saved to cloud in real-time
-- **Offline Mode**: Continue working without internet
-- **Cross-device Access**: Access projects from any device
-- **Backup & Recovery**: Automatic backups with point-in-time recovery
-- **CDN Delivery**: Fast loading via global content delivery network
-- **Secure Storage**: Encrypted storage with Cloudinary
-- **Storage Quotas**: Track and manage storage limits
-
-## WebAssembly Build
-
-To build the WebAssembly module from C++ source:
-
-1. Set up WASM dependencies (first time only):
-   ```bash
-   npm run setup:wasm
-   ```
-
-2. Build the WASM module:
-   ```bash
-   npm run build:wasm
-   ```
-
-## Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Run `npm run check` before committing
-4. Commit with conventional commit messages
-5. Push to your branch
-6. Open a Pull Request
-
-### Commit Message Format
-
-```
-<type>(<scope>): <description>
-
-[optional body]
-```
-
-Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
-
-Example: `feat(ui): add project history dialog`
-
-## License
-
-This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
-
-For commercial licensing options, please contact the maintainers.
-
-See [LICENSE](LICENSE) for full details.
-
-## Acknowledgments
-
-Built on top of [Chili3D](https://github.com/xiangechen/chili3d) - An open-source 3D CAD framework
-
-Special thanks to:
-- OpenCascade for the CAD kernel
-- Three.js community for 3D rendering
-- Firebase for backend services
-- Cloudinary for cloud storage
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/Ruthwik000/venus_fe/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Ruthwik000/venus_fe/discussions)
-
-## Disclaimer
-
-This software is provided "AS IS" without warranty of any kind. Users assume all risks associated with its use. The authors and contributors disclaim all liability for any damages, data loss, or consequences arising from the use of this software.
-
----
-
-Made with ❤️ by the ProteinX team
+The ProteinX team developed the Venus collaboration features and copilot integration on top of the Chili3D editor. The frontend is distributed under the [GNU AGPL v3](LICENSE). The C++ WebAssembly module carries its own [GNU LGPL v3 license](cpp/LICENSE-chili-wasm.txt).
