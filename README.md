@@ -21,6 +21,35 @@ LIVE Link: https://venuscad.pages.dev/
 - **⚡ WebAssembly Performance**: Near-native speed using OpenCascade compiled to WASM
 - **🎨 Modern UI**: Clean, professional interface with glassmorphic design
 
+## Frontend architecture
+
+The TypeScript editor runs the OpenCascade geometry kernel in WebAssembly and renders the document with Three.js. Opening a project supplies the session ID used by both the editor and the CAD copilot.
+
+```mermaid
+flowchart TD
+    auth["Firebase Auth"] -->|Sign in| dashboard["Project dashboard"]
+    dashboard -->|Open project by session ID| editor["Chili3D editor"]
+
+    subgraph browser["Browser CAD workspace"]
+        editor -->|Modeling commands| doc["Active CAD document"]
+        doc -->|Compute geometry| occ["OpenCascade WASM"]
+        occ -->|Tessellated geometry| view["Three.js viewport"]
+        doc -->|Save locally| local[("IndexedDB")]
+        editor --> chat["Copilot panel"]
+    end
+
+    chat <-->|Prompt, questions and result URLs over WebSocket| api["FastAPI copilot"]
+    chat -->|Fetch STEP or STL and import| doc
+    doc -->|Upload .cd snapshot on cloud save| files[("Cloudinary")]
+    doc -->|Publish snapshot URL and save time| meta[("Firestore project record")]
+    meta -->|Notify subscribed editor| peer["Collaborator's browser"]
+    files -->|Fetch saved .cd snapshot| peer
+```
+
+**Generating a part.** The copilot panel sends text and clarification answers to FastAPI. When generation finishes, the panel downloads the STEP file from Cloudinary, falling back to STL when needed, and imports it into the active document. Saving the project includes that geometry in its next `.cd` snapshot. [Copilot panel](packages/chili-ui/src/aiChat/aiChat.ts) · [Backend architecture](https://github.com/Ruthwik000/venus_be#backend-architecture)
+
+**Sharing an edit.** The Save command writes to IndexedDB and, for an active cloud project, uploads the serialized document and updates the owner's Firestore project record. Other open editors listen for that update and reload the saved snapshot. Presence, comments, and team chat use separate Firestore subscriptions. [Save command](packages/chili/src/commands/application/saveDocument.ts) · [Project sync](packages/chili-web/src/pages/editor.ts)
+
 ## Technology Stack
 
 ### Frontend
